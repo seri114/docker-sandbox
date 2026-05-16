@@ -5,6 +5,8 @@ import (
 	"time"
 
 	"github.com/docker/docker/client"
+
+	"github.com/seri114/docker-sandbox/controller/config"
 )
 
 type DockerClient struct {
@@ -12,15 +14,25 @@ type DockerClient struct {
 	timeout time.Duration
 }
 
-func NewClient(host string, timeout time.Duration) *DockerClient {
-	cli, err := client.NewClientWithOpts(client.WithHost(host))
+// NewClient creates a new Docker client with the given configuration.
+// It returns an error if the client cannot be created.
+func NewClient(cfg *config.Config) (*DockerClient, error) {
+	cli, err := client.NewClientWithOpts(
+		client.WithHost(cfg.DockerHost),
+		client.WithAPIVersionNegotiation(),
+	)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	return &DockerClient{
 		cli:     cli,
-		timeout: timeout,
-	}
+		timeout: cfg.RequestTimeout,
+	}, nil
+}
+
+// Client returns the underlying Docker client for direct API access.
+func (d *DockerClient) Client() *client.Client {
+	return d.cli
 }
 
 func (d *DockerClient) Close() error {

@@ -2,16 +2,14 @@ package handler
 
 import (
 	"testing"
-	"time"
 )
 
 func TestCreateContainerRequest(t *testing.T) {
 	req := &CreateContainerRequest{
-		Image:   "python:3.11-alpine",
-		Code:    "print('hello')",
-		Timeout: 30 * time.Second,
-		Memory:  128 * 1024 * 1024, // 128MB
-		CPU:     0.5,
+		Image:  "python:3.11-alpine",
+		Code:   "print('hello')",
+		Memory: 128 * 1024 * 1024, // 128MB
+		CPU:    0.5,
 	}
 
 	// Test ToContainerConfig

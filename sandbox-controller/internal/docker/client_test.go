@@ -90,7 +90,9 @@ func TestCreateContainer(t *testing.T) {
 	}
 
 	// Clean up
-	client.cli.ContainerRemove(ctx, id, container.RemoveOptions{Force: true})
+	if err := client.RemoveContainer(ctx, id, true); err != nil {
+		t.Errorf("RemoveContainer failed: %v", err)
+	}
 }
 
 func TestStartContainer(t *testing.T) {
@@ -121,14 +123,18 @@ func TestStartContainer(t *testing.T) {
 	if err != nil {
 		t.Skipf("Docker daemon not available: %v", err)
 	}
-	defer client.cli.ContainerRemove(ctx, id, container.RemoveOptions{Force: true})
+	defer func() {
+		if err := client.RemoveContainer(ctx, id, true); err != nil {
+			t.Errorf("RemoveContainer failed: %v", err)
+		}
+	}()
 
 	if err := client.StartContainer(ctx, id); err != nil {
 		t.Skipf("Docker daemon not available: %v", err)
 	}
 
 	// Verify container is running
-	inspect, err := client.cli.ContainerInspect(ctx, id)
+	inspect, err := client.Client().ContainerInspect(ctx, id)
 	if err != nil {
 		t.Fatalf("ContainerInspect failed: %v", err)
 	}

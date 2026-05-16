@@ -58,3 +58,9 @@ func (d *DockerClient) CreateContainer(ctx context.Context, config *container.Co
 func (d *DockerClient) StartContainer(ctx context.Context, id string) error {
 	return d.cli.ContainerStart(ctx, id, container.StartOptions{})
 }
+
+// RemoveContainer removes a Docker container with the given ID.
+// force forcefully removes the container even if it is running.
+func (d *DockerClient) RemoveContainer(ctx context.Context, id string, force bool) error {
+	return d.cli.ContainerRemove(ctx, id, container.RemoveOptions{Force: force})
+}

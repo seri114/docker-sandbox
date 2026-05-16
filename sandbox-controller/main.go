@@ -9,9 +9,9 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/seri114/docker-sandbox/controller/config"
-	"github.com/seri114/docker-sandbox/controller/internal/docker"
-	"github.com/seri114/docker-sandbox/controller/internal/handler"
+	"github.com/seri114/docker-sandbox/config"
+	"github.com/seri114/docker-sandbox/internal/docker"
+	"github.com/seri114/docker-sandbox/internal/handler"
 )
 
 // Server represents the HTTP server for the sandbox controller.
@@ -44,6 +44,17 @@ func (s *Server) handleCreate(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, fmt.Sprintf("Invalid request: %s", err), http.StatusBadRequest)
 		return
+	}
+
+	// Set default values if not provided
+	if req.Code == "" {
+		req.Code = "print('Ready')"
+	}
+	if req.Memory == 0 {
+		req.Memory = 128 * 1024 * 1024 // 128MB in bytes
+	}
+	if req.CPU == 0 {
+		req.CPU = 0.5 // 0.5 CPU
 	}
 
 	ctx, cancel := s.dockerClient.Context()

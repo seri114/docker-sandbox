@@ -15,7 +15,7 @@ def test_full_execution():
     This is an end-to-end test that requires sandbox-controller to be running.
     """
     # Arrange: Create SandboxClient pointing to the controller
-    client = SandboxClient("http://localhost:8000")
+    client = SandboxClient("http://localhost:8080")
 
     try:
         # Act 1: Create a container

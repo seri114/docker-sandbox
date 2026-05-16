@@ -75,7 +75,7 @@ class SandboxClient:
         return self.client.stream(
             "GET",
             f"{self.base_url}/containers/logs",
-            params={"container_id": container_id}
+            params={"id": container_id}
         )
 
     def close(self):

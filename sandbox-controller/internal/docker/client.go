@@ -79,3 +79,15 @@ func (d *DockerClient) ContainerLogs(ctx context.Context, id string, follow bool
 	}
 	return d.cli.ContainerLogs(ctx, id, options)
 }
+
+// StopAndRemoveContainer stops and removes a Docker container with the given ID.
+// It first attempts to stop the container gracefully with a 10 second timeout,
+// then removes it from the system.
+func (d *DockerClient) StopAndRemoveContainer(ctx context.Context, id string) error {
+	// Stop the container with a 10 second timeout
+	timeout := int(10 * time.Second)
+	stopErr := d.cli.ContainerStop(ctx, id, container.StopOptions{Timeout: &timeout})
+
+	// Remove the container (force remove if stop failed)
+	return d.cli.ContainerRemove(ctx, id, container.RemoveOptions{Force: stopErr != nil})
+}

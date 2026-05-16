@@ -1,0 +1,48 @@
+services:
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./webui:/usr/share/nginx/html:ro
+    networks:
+      - sandbox-net
+    restart: unless-stopped
+
+  test-client:
+    build:
+      context: ./test-client
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - SANDBOX_CONTROLLER_URL=http://sandbox-controller:8080
+    networks:
+      - sandbox-net
+    depends_on:
+      - sandbox-controller
+    restart: unless-stopped
+
+  sandbox-controller:
+    build:
+      context: ./sandbox-controller
+      dockerfile: Dockerfile
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - sandbox-net
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=64m
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:./seccomp-profile.json
+    cap_drop:
+      - ALL
+    user: "65532:65532"
+    restart: unless-stopped
+
+networks:
+  sandbox-net:
+    driver: bridge
+    internal: true

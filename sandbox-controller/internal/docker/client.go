@@ -2,6 +2,7 @@ package docker
 
 import (
 	"context"
+	"io"
 	"time"
 
 	"github.com/docker/docker/api/types/container"
@@ -63,4 +64,18 @@ func (d *DockerClient) StartContainer(ctx context.Context, id string) error {
 // force forcefully removes the container even if it is running.
 func (d *DockerClient) RemoveContainer(ctx context.Context, id string, force bool) error {
 	return d.cli.ContainerRemove(ctx, id, container.RemoveOptions{Force: force})
+}
+
+// ContainerLogs returns the logs from a container.
+// follow specifies whether to stream the logs as they are produced.
+// It returns an io.ReadCloser that provides Docker JSONLog formatted output.
+func (d *DockerClient) ContainerLogs(ctx context.Context, id string, follow bool) (io.ReadCloser, error) {
+	options := container.LogsOptions{
+		ShowStdout: true,
+		ShowStderr: true,
+		Follow:     follow,
+		Timestamps: false,
+		Tail:       "",
+	}
+	return d.cli.ContainerLogs(ctx, id, options)
 }

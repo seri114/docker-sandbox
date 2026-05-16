@@ -1,6 +1,7 @@
 package docker
 
 import (
+	"io"
 	"testing"
 	"time"
 
@@ -140,5 +141,74 @@ func TestStartContainer(t *testing.T) {
 	}
 	if !inspect.State.Running && inspect.State.Status != "exited" {
 		t.Errorf("expected container to be running or exited, got status: %s", inspect.State.Status)
+	}
+}
+
+func TestContainerLogs(t *testing.T) {
+	// Skip if Docker is not available
+	cfg := &config.Config{
+		DockerHost:     "unix:///var/run/docker.sock",
+		RequestTimeout: 10 * time.Second,
+	}
+
+	client, err := NewClient(cfg)
+	if err != nil {
+		t.Skipf("Docker not available: %v", err)
+	}
+	defer client.Close()
+
+	ctx, cancel := client.Context()
+	defer cancel()
+
+	config := &container.Config{
+		Image:        "alpine:latest",
+		Cmd:          []string{"sh", "-c", "echo stdout && echo stderr >&2"},
+		AttachStdout: true,
+		AttachStderr: true,
+	}
+	hostConfig := &container.HostConfig{
+		NetworkMode: "none",
+	}
+
+	id, err := client.CreateContainer(ctx, config, hostConfig)
+	if err != nil {
+		t.Skipf("Docker daemon not available: %v", err)
+	}
+	defer func() {
+		if err := client.RemoveContainer(ctx, id, true); err != nil {
+			t.Errorf("RemoveContainer failed: %v", err)
+		}
+	}()
+
+	if err := client.StartContainer(ctx, id); err != nil {
+		t.Skipf("Docker daemon not available: %v", err)
+	}
+
+	// Test logs (follow=false)
+	reader, err := client.ContainerLogs(ctx, id, false)
+	if err != nil {
+		t.Fatalf("ContainerLogs failed: %v", err)
+	}
+	defer reader.Close()
+
+	// Read some data
+	buf := make([]byte, 1024)
+	n, err := reader.Read(buf)
+	if err != nil && err != io.EOF {
+		t.Fatalf("Read failed: %v", err)
+	}
+	if n == 0 {
+		t.Fatal("expected to read some log data")
+	}
+
+	// Test logs (follow=true) - just verify it returns a reader
+	followReader, err := client.ContainerLogs(ctx, id, true)
+	if err != nil {
+		t.Fatalf("ContainerLogs with follow=true failed: %v", err)
+	}
+	defer followReader.Close()
+
+	if followReader == nil {
+		t.Fatal("expected non-nil reader for follow=true")
 	}
 }

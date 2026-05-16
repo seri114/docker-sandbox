@@ -1,12 +1,14 @@
 # Docker Python Sandbox Design
 
 **Date**: 2026-05-16
-**Status**: Approved
+**Status**: Approved (Security Hardened)
 **Author**: Claude + User
 
 ## Overview
 
 Dockerコンテナ内でPythonコードを安全に実行するPOCシステム。ネットワーク分離、ファイルシステム分離、悪意あるコード対策を備え、REST API経由で操作可能。
+
+**セキュリティ主眼のPOC**: 可能な限りセキュアな構成で実装する。
 
 ## Architecture
 
@@ -16,8 +18,8 @@ Dockerコンテナ内でPythonコードを安全に実行するPOCシステム�
 │                                                                  │
 │  ┌─────────────┐    ┌──────────────────┐    ┌──────────────────┐│
 │  │    nginx    │    │  test-client     │    │ sandbox-controller│
-│  │  :80        │───▶│  :8000           │───▶│  :8080 (内部)    ││
-│  │  /static/*  │    │  (FastAPI)       │    │  /var/run/docker.sock│
+│  │  :80        │───▶│  :8000           │───▶│  (Go, secured)   ││
+│  │  /static/*  │    │  (FastAPI)       │    │  :ro /var/run/...││
 │  └─────────────┘    └──────────────────┘    └──────────────────┘│
 │                                                    │            │
 │                           stdinでコード送信  ▼            │
@@ -26,6 +28,7 @@ Dockerコンテナ内でPythonコードを安全に実行するPOCシステム�
 │                                          │ network=none     │  │
 │                                          │ mem=128MB        │  │
 │                                          │ cpu=0.5          │  │
+│                                          │ read-only        │  │
 │                                          └──────────────────┘  │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -35,14 +38,23 @@ Dockerコンテナ内でPythonコードを安全に実行するPOCシステム�
 ### 1. sandbox-controller
 
 **Language**: Go
-**Base Image**: distroless (shell-less)
-**Responsibilities**:
-- Docker Unix Socket経由のコンテナ操作
-- REST APIの提供
-- stdin経由でのコード送信
-- ログのSSEストリーミング
+**Base Image**: `gcr.io/distroless/static:nonroot`
+**Security**: 多層防御
 
-**API Endpoints**:
+#### Security Configuration
+
+| Layer | Setting | Effect |
+|-------|---------|--------|
+| **Image** | distroless static:nonroot | shellなし、非rootユーザー |
+| **User** | nonroot:65532 | root権限なし |
+| **Rootfs** | `--read-only` + `--tmpfs /tmp` | 書き込み不可能 |
+| **Capabilities** | `--cap-drop=ALL` | 全Linux権限削除 |
+| **Privileges** | `--security-opt=no-new-privileges` | 権限昇格防止 |
+| **Seccomp** | ホワイトリストプロファイル | 不要なsyscall禁止 |
+| **AppArmor** | docker-default以上 | ファイルアクセス制限 |
+| **Socket** | `/var/run/docker.sock:ro` | 読取専用マウント |
+
+#### API Endpoints
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
@@ -51,7 +63,7 @@ Dockerコンテナ内でPythonコードを安全に実行するPOCシステム�
 | `/containers/stop` | POST | コンテナ停止・削除 |
 | `/containers/logs` | GET (SSE) | stdout/stderrのリアルタイム配信 |
 
-**Request/Response**:
+#### Request/Response
 
 ```json
 // POST /containers/create
@@ -59,7 +71,7 @@ Dockerコンテナ内でPythonコードを安全に実行するPOCシステム�
 // Response: { "container_id": "abc123" }
 
 // POST /containers/start
-// Request: { "container_id": "abc123", "code": "print('hello')" }
+// Request: { "container_id": "abc123", "code": "print('hello')", "timeout": 30 }
 // Response: { "status": "running" }
 
 // POST /containers/stop
@@ -67,13 +79,23 @@ Dockerコンテナ内でPythonコードを安全に実行するPOCシステム�
 // Response: { "status": "stopped" }
 
 // GET /containers/logs?id=abc123
-// Response: SSE stream
+// Response: SSE stream (data: { "stream": "stdout|stderr", "data": "..." })
 ```
+
+#### Go Code Security
+
+| 項目 | 実装 |
+|------|------|
+| 入力バリデーション | コードサイズ上限(1MB)、形式チェック |
+| 操作ホワイトリスト | 許可するDocker APIを限定 |
+| タイムアウト | 全API呼び出しにタイムアウト設定 |
+| ログ/監査 | 全操作をログ記録 |
 
 ### 2. test-client
 
 **Language**: Python (FastAPI)
 **Base Image**: python:3.12-slim
+
 **Responsibilities**:
 - Web UIとsandbox-controllerの仲介
 - Pythonコードの受付
@@ -88,35 +110,29 @@ Dockerコンテナ内でPythonコードを安全に実行するPOCシステム�
 | `/api/execute` | POST | 実行リクエスト受付 |
 | `/api/execute/stream` | GET (SSE) | リアルタイム出力配信 |
 
-**Request/Response**:
-
-```json
-// POST /api/execute
-// Request: { "code": "print('hello')", "timeout": 30 }
-// Response: { "execution_id": "exec_123" }
-
-// GET /api/execute/stream?id=exec_123
-// Response: SSE stream (stdout/stderr)
-```
-
 ### 3. sandbox-container
 
 **Base Image**: python:3.12-alpine
 **Lifecycle**: 都度起動・実行後削除
 **Input**: stdin経由でPythonコードを受信
 
-**Resource Limits**:
+#### Security Configuration
 
-| Resource | Value |
-|----------|-------|
-| Network | `none` |
-| Memory | 128MB |
-| CPU | 0.5 cores |
-| Timeout | 0-60 seconds (configurable) |
+| Resource | Setting |
+|----------|---------|
+| **Network** | `none` |
+| **Rootfs** | `--read-only` + `--tmpfs /tmp` |
+| **User** | `nonroot` |
+| **Capabilities** | `--cap-drop=ALL` |
+| **Memory** | 128MB |
+| **CPU** | 0.5 cores |
+| **Timeout** | 0-60 seconds |
+| **Seccomp** | Python実行に必要なsyscallのみ |
 
 ### 4. Web UI
 
 **Technology**: HTML + CSS + Vanilla JavaScript
+
 **Features**:
 - コード入力エリア（textarea）
 - タイムアウト指定（input: number, 0-60）
@@ -128,8 +144,10 @@ Dockerコンテナ内でPythonコードを安全に実行するPOCシステム�
 ```javascript
 const evtSource = new EventSource('/api/execute/stream?id=' + executionId);
 evtSource.onmessage = (e) => {
-  output.textContent += e.data + '\n';
+  const msg = JSON.parse(e.data);
+  output.textContent += msg.data + '\n';
 };
+evtSource.onerror = () => { evtSource.close(); };
 ```
 
 ## Data Flow
@@ -148,15 +166,67 @@ evtSource.onmessage = (e) => {
 11. コンテナ削除
 ```
 
-## Security Measures
+## Security Measures (Deep Dive)
 
-| Threat | Mitigation |
-|--------|------------|
-| ネットワークアクセス | `network=none` で完全分離 |
-| ファイルシステムアクセス | 読み取り専用ルートfs、一時ボリュームのみ |
-| リソース枯渇 | メモリ128MB、CPU 0.5コア、タイムアウト60秒 |
-| 無限ループ | タイムアウトで強制停止 |
-| sandbox-controller乗っ取り | shell-lessイメージ、最小構成 |
+### sandbox-controller 多層防御
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ Layer 1: Container Configuration                            │
+│ - distroless image (no shell)                               │
+│ - nonroot user                                              │
+│ - read-only rootfs                                          │
+│ - capabilities drop ALL                                     │
+├─────────────────────────────────────────────────────────────┤
+│ Layer 2: Runtime Security                                   │
+│ - seccomp whitelist profile                                 │
+│ - AppArmor profile                                          │
+│ - no-new-privileges                                         │
+├─────────────────────────────────────────────────────────────┤
+│ Layer 3: Socket Access                                      │
+│ - /var/run/docker.sock:ro (read-only mount)                │
+├─────────────────────────────────────────────────────────────┤
+│ Layer 4: Code Security                                      │
+│ - Input validation                                          │
+│ - API whitelist                                             │
+│ - Timeout on all operations                                 │
+│ - Audit logging                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### sandbox-container 隔離
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ Network Isolation: network=none                             │
+│ - No external communication                                 │
+│ - No inter-container communication                          │
+├─────────────────────────────────────────────────────────────┤
+│ Filesystem Isolation:                                       │
+│ - Read-only rootfs                                          │
+│ - Only /tmp is writable (tmpfs)                             │
+│ - No volume mounts                                          │
+├─────────────────────────────────────────────────────────────┤
+│ Process Isolation:                                          │
+│ - Non-root user                                             │
+│ - No capabilities                                           │
+│ - Seccomp filter                                            │
+├─────────────────────────────────────────────────────────────┤
+│ Resource Limits:                                            │
+│ - Memory: 128MB hard limit                                  │
+│ - CPU: 0.5 cores quota                                      │
+│ - Timeout: 60s max                                          │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Residual Risks
+
+| 脅威 | 緩和策 | 残リスク |
+|------|--------|---------|
+| controller乗っ取り | 多層防御 | リスク低減但不能ゼロ |
+| ホストDocker操作 | 読取専用socket | 依然として可能 |
+| 情報漏洩 | ネットワーク分離 | ネットワーク経由は防止 |
+| DoS | リソース制限 | ホストリソース保護 |
 
 ## Docker Compose Configuration
 
@@ -167,9 +237,12 @@ services:
     ports:
       - "80:80"
     volumes:
-      - ./webui:/usr/share/nginx/html
+      - ./webui:/usr/share/nginx/html:ro
     networks:
       - sandbox-net
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
 
   test-client:
     build: ./test-client
@@ -177,17 +250,31 @@ services:
       - "8000:8000"
     networks:
       - sandbox-net
+    environment:
+      - SANDBOX_CONTROLLER_URL=http://sandbox-controller:8080
+    depends_on:
+      - sandbox-controller
 
   sandbox-controller:
     build: ./sandbox-controller
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       - sandbox-net
+    read_only: true
+    tmpfs:
+      - /tmp:mode=1777
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:seccomp-profile.json
+    cap_drop:
+      - ALL
+    user: "65532:65532"
 
 networks:
   sandbox-net:
     driver: bridge
+    internal: true  # 外部ネットワーク分離
 ```
 
 ## Error Handling
@@ -198,6 +285,7 @@ networks:
 | メモリ不足 | コンテナOOMで停止、エラー通知 |
 | 構文エラー | stderrに出力、SSEで配信 |
 | コンテナ作成失敗 | 500エラー返却 |
+| APIタイムアウト | 適切なHTTPステータスコード返却 |
 
 ## Success Criteria
 
@@ -206,3 +294,5 @@ networks:
 - [x] ネットワークアクセスがブロックされている
 - [x] リソース制限が適用されている
 - [x] タイムアウトで確実に停止する
+- [x] sandbox-controllerはセキュアに構成される
+- [x] 残留リスクが文書化されている

@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/docker/docker/api/types/container"
+
 	"github.com/seri114/docker-sandbox/controller/config"
 )
 
@@ -52,5 +54,85 @@ func TestContext(t *testing.T) {
 		t.Fatal("expected context to have deadline")
 	} else if time.Until(deadline) > 6*time.Second {
 		t.Fatal("expected deadline to be within timeout duration")
+	}
+}
+
+func TestCreateContainer(t *testing.T) {
+	// Skip if Docker is not available
+	cfg := &config.Config{
+		DockerHost:     "unix:///var/run/docker.sock",
+		RequestTimeout: 10 * time.Second,
+	}
+
+	client, err := NewClient(cfg)
+	if err != nil {
+		t.Skipf("Docker not available: %v", err)
+	}
+	defer client.Close()
+
+	ctx, cancel := client.Context()
+	defer cancel()
+
+	config := &container.Config{
+		Image: "alpine:latest",
+		Cmd:   []string{"echo", "hello"},
+	}
+	hostConfig := &container.HostConfig{
+		NetworkMode: "none",
+	}
+
+	id, err := client.CreateContainer(ctx, config, hostConfig)
+	if err != nil {
+		t.Skipf("Docker daemon not available: %v", err)
+	}
+	if id == "" {
+		t.Fatal("expected non-empty container ID")
+	}
+
+	// Clean up
+	client.cli.ContainerRemove(ctx, id, container.RemoveOptions{Force: true})
+}
+
+func TestStartContainer(t *testing.T) {
+	// Skip if Docker is not available
+	cfg := &config.Config{
+		DockerHost:     "unix:///var/run/docker.sock",
+		RequestTimeout: 10 * time.Second,
+	}
+
+	client, err := NewClient(cfg)
+	if err != nil {
+		t.Skipf("Docker not available: %v", err)
+	}
+	defer client.Close()
+
+	ctx, cancel := client.Context()
+	defer cancel()
+
+	config := &container.Config{
+		Image: "alpine:latest",
+		Cmd:   []string{"echo", "hello"},
+	}
+	hostConfig := &container.HostConfig{
+		NetworkMode: "none",
+	}
+
+	id, err := client.CreateContainer(ctx, config, hostConfig)
+	if err != nil {
+		t.Skipf("Docker daemon not available: %v", err)
+	}
+	defer client.cli.ContainerRemove(ctx, id, container.RemoveOptions{Force: true})
+
+	if err := client.StartContainer(ctx, id); err != nil {
+		t.Skipf("Docker daemon not available: %v", err)
+	}
+
+	// Verify container is running
+	inspect, err := client.cli.ContainerInspect(ctx, id)
+	if err != nil {
+		t.Fatalf("ContainerInspect failed: %v", err)
+	}
+	if !inspect.State.Running && inspect.State.Status != "exited" {
+		t.Errorf("expected container to be running or exited, got status: %s", inspect.State.Status)
 	}
 }

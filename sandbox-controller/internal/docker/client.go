@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 
 	"github.com/seri114/docker-sandbox/controller/config"
@@ -41,4 +42,19 @@ func (d *DockerClient) Close() error {
 
 func (d *DockerClient) Context() (context.Context, context.CancelFunc) {
 	return context.WithTimeout(context.Background(), d.timeout)
+}
+
+// CreateContainer creates a new Docker container with the given configuration.
+// It returns the container ID and any error that occurred.
+func (d *DockerClient) CreateContainer(ctx context.Context, config *container.Config, hostConfig *container.HostConfig) (string, error) {
+	resp, err := d.cli.ContainerCreate(ctx, config, hostConfig, nil, nil, "")
+	if err != nil {
+		return "", err
+	}
+	return resp.ID, nil
+}
+
+// StartContainer starts a Docker container with the given ID.
+func (d *DockerClient) StartContainer(ctx context.Context, id string) error {
+	return d.cli.ContainerStart(ctx, id, container.StartOptions{})
 }

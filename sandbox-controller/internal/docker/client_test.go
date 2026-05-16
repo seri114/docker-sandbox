@@ -2,17 +2,27 @@ package docker
 
 import (
 	"io"
+	"os"
 	"testing"
 	"time"
 
 	"github.com/docker/docker/api/types/container"
 
-	"github.com/seri114/docker-sandbox/controller/config"
+	"github.com/seri114/docker-sandbox/config"
 )
+
+// getDockerHost returns the Docker socket path, defaulting to the standard path
+// or using DOCKER_HOST environment variable if set
+func getDockerHost() string {
+	if host := os.Getenv("DOCKER_HOST"); host != "" {
+		return host
+	}
+	return "unix:///var/run/docker.sock"
+}
 
 func TestNewClient(t *testing.T) {
 	cfg := &config.Config{
-		DockerHost:     "unix:///var/run/docker.sock",
+		DockerHost:     getDockerHost(),
 		RequestTimeout: 10 * time.Second,
 	}
 
@@ -61,7 +71,7 @@ func TestContext(t *testing.T) {
 func TestCreateContainer(t *testing.T) {
 	// Skip if Docker is not available
 	cfg := &config.Config{
-		DockerHost:     "unix:///var/run/docker.sock",
+		DockerHost:     getDockerHost(),
 		RequestTimeout: 10 * time.Second,
 	}
 
@@ -99,7 +109,7 @@ func TestCreateContainer(t *testing.T) {
 func TestStartContainer(t *testing.T) {
 	// Skip if Docker is not available
 	cfg := &config.Config{
-		DockerHost:     "unix:///var/run/docker.sock",
+		DockerHost:     getDockerHost(),
 		RequestTimeout: 10 * time.Second,
 	}
 
@@ -147,7 +157,7 @@ func TestStartContainer(t *testing.T) {
 func TestContainerLogs(t *testing.T) {
 	// Skip if Docker is not available
 	cfg := &config.Config{
-		DockerHost:     "unix:///var/run/docker.sock",
+		DockerHost:     getDockerHost(),
 		RequestTimeout: 10 * time.Second,
 	}
 

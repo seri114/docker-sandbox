@@ -8,7 +8,7 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 
-	"github.com/seri114/docker-sandbox/controller/config"
+	"github.com/seri114/docker-sandbox/config"
 )
 
 type DockerClient struct {

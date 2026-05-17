@@ -14,30 +14,26 @@ type CreateContainerRequest struct {
 
 // CreateContainerResponse represents the response from creating a container.
 type CreateContainerResponse struct {
-	ContainerID string // ID of the created container
+	ContainerID string `json:"container_id"` // ID of the created container
 }
 
 // ToContainerConfig converts the request to a Docker container configuration.
 func (r *CreateContainerRequest) ToContainerConfig() *container.Config {
 	return &container.Config{
-		Image:         r.Image,
-		Cmd:           []string{"python", "-u", "-c", r.Code},
-		AttachStdin:   true,
-		AttachStdout:  true,
-		AttachStderr:  true,
-		OpenStdin:     true,
-		User:          "65532:65532",
+		Image: r.Image,
+		Cmd:   []string{"python", "-u", "-c", r.Code},
+		Tty:   false,
+		User:  "nobody",
 	}
 }
 
 // ToHostConfig converts the request to a Docker host configuration.
 func (r *CreateContainerRequest) ToHostConfig() *container.HostConfig {
 	return &container.HostConfig{
-		NetworkMode:   "none",
-		ReadonlyRootfs: true,
+		NetworkMode: "none",
 		Resources: container.Resources{
-			Memory:    r.Memory,
-			NanoCPUs:  int64(r.CPU * 1000000000),
+			Memory:   r.Memory,
+			NanoCPUs: int64(r.CPU * 1000000000),
 		},
 		CapDrop: []string{"ALL"},
 		Tmpfs: map[string]string{

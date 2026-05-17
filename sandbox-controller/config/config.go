@@ -10,6 +10,6 @@ type Config struct {
 func Default() *Config {
 	return &Config{
 		DockerHost:     "unix:///var/run/docker.sock",
-		RequestTimeout: 30 * time.Second,
+		RequestTimeout: 60 * time.Second, // Increased for Docker Desktop Mac
 	}
 }

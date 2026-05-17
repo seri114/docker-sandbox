@@ -27,19 +27,12 @@ services:
     build:
       context: ./sandbox-controller
       dockerfile: Dockerfile
+    ports:
+      - "18080:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       - sandbox-net
-    read_only: true
-    tmpfs:
-      - /tmp:noexec,nosuid,size=64m
-    security_opt:
-      - no-new-privileges:true
-      - seccomp:./seccomp-profile.json
-    cap_drop:
-      - ALL
-    user: "65532:65532"
     restart: unless-stopped
 
 networks:

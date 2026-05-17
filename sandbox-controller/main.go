@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -74,6 +75,8 @@ func (s *Server) handleCreate(w http.ResponseWriter, r *http.Request) {
 }
 
 // handleStart handles the container start endpoint.
+// NOTE: Start is executed asynchronously due to Docker Desktop for Mac socket proxy bug.
+// The container start API may not respond, but the container executes normally.
 func (s *Server) handleStart(w http.ResponseWriter, r *http.Request) {
 	var req handler.StartContainerRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -86,16 +89,23 @@ func (s *Server) handleStart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctx, cancel := s.dockerClient.Context()
-	defer cancel()
+	log.Printf("[DEBUG] Starting container (async): %s", req.ContainerID)
 
-	if err := s.dockerClient.StartContainer(ctx, req.ContainerID); err != nil {
-		http.Error(w, fmt.Sprintf("Failed to start container: %s", err), http.StatusInternalServerError)
-		return
-	}
+	// Execute container start asynchronously to avoid socket proxy timeout
+	go func() {
+		ctx, cancel := s.dockerClient.Context()
+		defer cancel()
 
+		if err := s.dockerClient.StartContainer(ctx, req.ContainerID); err != nil {
+			log.Printf("[ERROR] Failed to start container %s: %v", req.ContainerID, err)
+		} else {
+			log.Printf("[DEBUG] Container started successfully: %s", req.ContainerID)
+		}
+	}()
+
+	// Return immediately
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(handler.StartContainerResponse{Status: "running"})
+	json.NewEncoder(w).Encode(handler.StartContainerResponse{Status: "starting"})
 }
 
 // handleStop handles the container stop endpoint.
@@ -184,6 +194,11 @@ func (s *Server) handleLogs(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	cfg := config.Default()
+
+	// Override DockerHost from environment variable if set
+	if dockerHost := os.Getenv("DOCKER_HOST"); dockerHost != "" {
+		cfg.DockerHost = dockerHost
+	}
 
 	dockerClient, err := docker.NewClient(cfg)
 	if err != nil {

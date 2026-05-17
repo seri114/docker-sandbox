@@ -135,7 +135,7 @@ def test_stream_logs(client):
     client.client.stream.assert_called_once_with(
         "GET",
         "http://localhost:8000/containers/logs",
-        params={"container_id": "container-123"}
+        params={"id": "container-123"}
     )
     assert result == mock_response
 

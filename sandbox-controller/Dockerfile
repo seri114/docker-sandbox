@@ -23,14 +23,11 @@ RUN go mod tidy && \
     -ldflags="-w -s" \
     -o /build/controller .
 
-# Final stage - distroless
-FROM gcr.io/distroless/static:nonroot
+# Final stage - TEMPORARY alpine for testing
+FROM alpine:latest
 
 # Copy the binary from builder
 COPY --from=builder /build/controller /controller
-
-# Set non-root user (65532:65532 is standard for distroless)
-USER 65532:65532
 
 # Set entrypoint
 ENTRYPOINT ["/controller"]

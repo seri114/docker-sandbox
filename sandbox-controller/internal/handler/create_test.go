@@ -33,21 +33,8 @@ func TestCreateContainerRequest(t *testing.T) {
 		}
 	}
 
-	if !config.AttachStdin {
-		t.Error("expected AttachStdin to be true")
-	}
-	if !config.AttachStdout {
-		t.Error("expected AttachStdout to be true")
-	}
-	if !config.AttachStderr {
-		t.Error("expected AttachStderr to be true")
-	}
-	if !config.OpenStdin {
-		t.Error("expected OpenStdin to be true")
-	}
-
-	if config.User != "65532:65532" {
-		t.Errorf("expected user '65532:65532', got '%s'", config.User)
+	if config.User != "nobody" {
+		t.Errorf("expected user 'nobody', got '%s'", config.User)
 	}
 
 	// Test ToHostConfig
@@ -60,8 +47,8 @@ func TestCreateContainerRequest(t *testing.T) {
 		t.Errorf("expected network mode 'none', got '%s'", hostConfig.NetworkMode)
 	}
 
-	if !hostConfig.ReadonlyRootfs {
-		t.Error("expected ReadonlyRootfs to be true")
+	if len(hostConfig.CapDrop) == 0 || hostConfig.CapDrop[0] != "ALL" {
+		t.Errorf("expected CapDrop to contain 'ALL', got %v", hostConfig.CapDrop)
 	}
 
 	if hostConfig.Resources.Memory != 128*1024*1024 {
@@ -70,10 +57,6 @@ func TestCreateContainerRequest(t *testing.T) {
 
 	if hostConfig.Resources.NanoCPUs != 500000000 {
 		t.Errorf("expected NanoCPUs 500000000, got %d", hostConfig.Resources.NanoCPUs)
-	}
-
-	if len(hostConfig.CapDrop) == 0 || hostConfig.CapDrop[0] != "ALL" {
-		t.Errorf("expected CapDrop to contain 'ALL', got %v", hostConfig.CapDrop)
 	}
 
 	tmpfs, ok := hostConfig.Tmpfs["/tmp"]

@@ -6,12 +6,12 @@ import (
 
 // StopContainerRequest represents a request to stop and remove a sandbox container.
 type StopContainerRequest struct {
-	ContainerID string // ID of the container to stop and remove
+	ContainerID string `json:"container_id"` // ID of the container to stop and remove
 }
 
 // StopContainerResponse represents the response from stopping a container.
 type StopContainerResponse struct {
-	Status string // Status of the container (e.g., "stopped")
+	Status string `json:"status"` // Status of the container (e.g., "stopped")
 }
 
 // Validate validates the StopContainerRequest fields.

@@ -7,14 +7,14 @@ import (
 
 // StartContainerRequest represents a request to start a sandbox container.
 type StartContainerRequest struct {
-	ContainerID string // ID of the container to start
-	Code        string // Python code to execute
-	Timeout     int    // Execution timeout in seconds (0-60)
+	ContainerID string `json:"container_id"` // ID of the container to start
+	Code        string `json:"code"`         // Python code to execute
+	Timeout     int    `json:"timeout"`      // Execution timeout in seconds (0-60)
 }
 
 // StartContainerResponse represents the response from starting a container.
 type StartContainerResponse struct {
-	Status string // Status of the container (e.g., "running")
+	Status string `json:"status"` // Status of the container (e.g., "running")
 }
 
 // Validate validates the StartContainerRequest fields.

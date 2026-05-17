@@ -1,10 +1,11 @@
 """Tests for FastAPI application."""
 
-import pytest
 import uuid
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import MagicMock, Mock
+
+import pytest
+from app.api import ExecuteRequest, app, get_sandbox_client
 from fastapi.testclient import TestClient
-from app.api import app, ExecuteRequest, get_sandbox_client
 
 
 @pytest.fixture
@@ -43,10 +44,7 @@ def test_execute_request_custom_values():
 
 def test_create_execution(client, mock_sandbox_client):
     """Test POST /api/execute creates execution."""
-    response = client.post(
-        "/api/execute",
-        json={"code": "print('hello')"}
-    )
+    response = client.post("/api/execute", json={"code": "print('hello')"})
 
     assert response.status_code == 200
 
@@ -56,8 +54,12 @@ def test_create_execution(client, mock_sandbox_client):
     uuid.UUID(data["execution_id"])  # Will raise if invalid
 
     # Verify container was created and started
-    mock_sandbox_client.create_container.assert_called_once_with(image="python:3.12-alpine")
-    mock_sandbox_client.start_container.assert_called_once_with(container_id="test-container-123", code="print('hello')", timeout=30)
+    mock_sandbox_client.create_container.assert_called_once_with(
+        image="python:3.12-alpine"
+    )
+    mock_sandbox_client.start_container.assert_called_once_with(
+        container_id="test-container-123", code="print('hello')", timeout=30
+    )
 
 
 def test_create_execution_custom_params(client, mock_sandbox_client):
@@ -69,8 +71,8 @@ def test_create_execution_custom_params(client, mock_sandbox_client):
         json={
             "code": "import time; time.sleep(1)",
             "image": "python:3.11-alpine",
-            "timeout": 60
-        }
+            "timeout": 60,
+        },
     )
 
     assert response.status_code == 200
@@ -79,16 +81,19 @@ def test_create_execution_custom_params(client, mock_sandbox_client):
     assert "execution_id" in data
     uuid.UUID(data["execution_id"])
 
-    mock_sandbox_client.create_container.assert_called_once_with(image="python:3.11-alpine")
-    mock_sandbox_client.start_container.assert_called_once_with(container_id="custom-container-456", code="import time; time.sleep(1)", timeout=60)
+    mock_sandbox_client.create_container.assert_called_once_with(
+        image="python:3.11-alpine"
+    )
+    mock_sandbox_client.start_container.assert_called_once_with(
+        container_id="custom-container-456",
+        code="import time; time.sleep(1)",
+        timeout=60,
+    )
 
 
 def test_create_execution_missing_code(client):
     """Test POST /api/execute without code returns validation error."""
-    response = client.post(
-        "/api/execute",
-        json={}
-    )
+    response = client.post("/api/execute", json={})
 
     assert response.status_code == 422
 
@@ -97,10 +102,7 @@ def test_execute_stream_sse(client, mock_sandbox_client):
     """Test GET /api/execute/stream streams logs via SSE."""
     # First create an execution so it exists in the store
     mock_sandbox_client.create_container.return_value = "container-for-stream"
-    post_response = client.post(
-        "/api/execute",
-        json={"code": "print('test')"}
-    )
+    post_response = client.post("/api/execute", json={"code": "print('test')"})
     execution_id = post_response.json()["execution_id"]
 
     # Mock streaming response - create a context manager mock

@@ -5,6 +5,7 @@ import (
 	"io"
 	"time"
 
+	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 
@@ -66,6 +67,11 @@ func (d *DockerClient) RemoveContainer(ctx context.Context, id string, force boo
 	return d.cli.ContainerRemove(ctx, id, container.RemoveOptions{Force: force})
 }
 
+// InspectContainer inspects a Docker container and returns its configuration and state.
+func (d *DockerClient) InspectContainer(ctx context.Context, id string) (types.ContainerJSON, error) {
+	return d.cli.ContainerInspect(ctx, id)
+}
+
 // ContainerLogs returns the logs from a container.
 // follow specifies whether to stream the logs as they are produced.
 // It returns an io.ReadCloser that provides Docker JSONLog formatted output.
@@ -77,7 +83,11 @@ func (d *DockerClient) ContainerLogs(ctx context.Context, id string, follow bool
 		Timestamps: false,
 		Tail:       "",
 	}
-	return d.cli.ContainerLogs(ctx, id, options)
+	reader, err := d.cli.ContainerLogs(ctx, id, options)
+	if err != nil {
+		return nil, err
+	}
+	return reader, nil
 }
 
 // StopAndRemoveContainer stops and removes a Docker container with the given ID.

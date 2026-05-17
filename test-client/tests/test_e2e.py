@@ -1,53 +1,165 @@
-"""End-to-end tests for SandboxClient.
+"""E2E tests for sandbox test client."""
 
-These tests require the sandbox-controller to be running.
-"""
+import asyncio
 
-import time
+import httpx
 import pytest
-from app.client import SandboxClient
 
 
-@pytest.mark.e2e
-def test_full_execution():
-    """Test full container lifecycle: create, start, stop, close.
-
-    This is an end-to-end test that requires sandbox-controller to be running.
-    """
-    # Arrange: Create SandboxClient pointing to the controller
-    client = SandboxClient("http://localhost:8080")
+async def test_e2e_code_execution_with_real_docker():
+    """Test complete flow with real Docker container."""
+    controller_url = "http://sandbox-controller:8080"
 
     try:
-        # Act 1: Create a container
-        container_id = client.create_container(image="python:3.12-alpine")
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            code = """print("Hello")
+print("World")
+for i in range(3):
+    print(f"Count: {i}")"""
 
-        # Assert 1: Verify we got a container_id
-        assert container_id is not None
-        assert isinstance(container_id, str)
-        assert len(container_id) > 0
+            # Create container
+            response = await client.post(
+                f"{controller_url}/containers/create",
+                json={"image": "python:3.12-alpine", "code": code},
+            )
+            assert response.status_code == 200
+            container_id = response.json()["container_id"]
 
-        # Act 2: Start the container with test code
-        test_code = """
-print('Hello from sandbox!')
-import sys
-print(f'Python version: {sys.version}')
-"""
-        start_result = client.start_container(container_id, code=test_code)
+            # Start container
+            await client.post(
+                f"{controller_url}/containers/start",
+                json={"container_id": container_id, "code": code, "timeout": 30},
+            )
 
-        # Assert 2: Verify start succeeded
-        assert start_result is not None
-        assert "status" in start_result
+            await asyncio.sleep(0.5)
 
-        # Act 3: Wait for execution
-        time.sleep(2)
+            # Stream logs
+            async with client.stream(
+                "GET", f"{controller_url}/containers/logs", params={"id": container_id}
+            ) as response:
+                assert response.status_code == 200
+                assert response.headers["content-type"] == "text/event-stream"
 
-        # Act 4: Stop the container
-        stop_result = client.stop_container(container_id)
+                output_lines = []
+                async for line in response.aiter_lines():
+                    if line.startswith("data: "):
+                        import json
 
-        # Assert 4: Verify stop succeeded
-        assert stop_result is not None
-        assert "status" in stop_result
+                        json_str = line[6:]
+                        try:
+                            msg = json.loads(json_str)
+                            if "data" in msg and msg["data"]:
+                                output_lines.append(msg["data"].strip())
+                        except Exception:
+                            pass
 
-    finally:
-        # Cleanup: Always close the client
-        client.close()
+            assert len(output_lines) >= 3
+            assert any("Hello" in line for line in output_lines)
+
+            # Cleanup
+            await client.post(
+                f"{controller_url}/containers/stop", json={"container_id": container_id}
+            )
+
+    except httpx.ConnectError:
+        pytest.skip("Controller not available")
+
+
+async def test_e2e_sse_format():
+    """Test SSE format is correct."""
+    controller_url = "http://sandbox-controller:8080"
+
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            code = 'print("Test")'
+
+            response = await client.post(
+                f"{controller_url}/containers/create",
+                json={"image": "python:3.12-alpine", "code": code},
+            )
+            container_id = response.json()["container_id"]
+
+            await client.post(
+                f"{controller_url}/containers/start",
+                json={"container_id": container_id, "code": code, "timeout": 30},
+            )
+
+            await asyncio.sleep(0.5)
+
+            # Verify SSE format
+            async with client.stream(
+                "GET", f"{controller_url}/containers/logs", params={"id": container_id}
+            ) as response:
+                raw_data = b""
+                async for chunk in response.aiter_bytes():
+                    raw_data += chunk
+                    if len(raw_data) > 100:
+                        break
+
+            data_str = raw_data.decode("utf-8", errors="ignore")
+            assert "data: " in data_str
+            assert "\n\n" in data_str  # SSE requires double newline
+
+            # Cleanup
+            await client.post(
+                f"{controller_url}/containers/stop", json={"container_id": container_id}
+            )
+
+    except httpx.ConnectError:
+        pytest.skip("Controller not available")
+
+
+async def test_e2e_cancel_execution():
+    """Test cancelling a running execution."""
+    controller_url = "http://sandbox-controller:8080"
+
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            # Long running code
+            code = """import time
+print("Starting...")
+for i in range(10):
+    print(f"Step {i}")
+    time.sleep(0.5)
+print("Done")"""
+
+            # Create container
+            response = await client.post(
+                f"{controller_url}/containers/create",
+                json={"image": "python:3.12-alpine", "code": code},
+            )
+            assert response.status_code == 200
+            container_id = response.json()["container_id"]
+
+            # Start container
+            await client.post(
+                f"{controller_url}/containers/start",
+                json={"container_id": container_id, "code": code, "timeout": 30},
+            )
+
+            # Wait for container to start
+            await asyncio.sleep(1)
+
+            # Stop the container
+            response = await client.post(
+                f"{controller_url}/containers/stop", json={"container_id": container_id}
+            )
+            assert response.status_code == 200
+
+            # Verify container is stopped (inspect should fail)
+            try:
+                response = await client.get(
+                    f"{controller_url}/containers/{container_id}/json"
+                )
+                # If we get here, container still exists - check if it's stopped/exited
+                if response.status_code == 200:
+                    data = response.json()
+                    assert data["State"]["Running"] is False, (
+                        "Container should be stopped"
+                    )
+            except httpx.HTTPStatusError as e:
+                # 404 is ok - container was removed
+                assert e.response.status_code == 404
+
+    except httpx.ConnectError:
+        pytest.skip("Controller not available")

@@ -24,6 +24,7 @@ func (r *CreateContainerRequest) ToContainerConfig() *container.Config {
 		Cmd:   []string{"python", "-u", "-c", r.Code},
 		Tty:   false,
 		User:  "nobody",
+		Env:   []string{"PYTHONUNBUFFERED=1"},
 	}
 }
 

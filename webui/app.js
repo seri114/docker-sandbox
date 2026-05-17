@@ -14,6 +14,7 @@ const clearButton = document.getElementById('clear');
 // State
 let eventSource = null;
 let isRunning = false;
+let currentExecutionId = null;
 
 // Validate timeout input (1-60 seconds)
 function validateTimeout() {
@@ -30,15 +31,16 @@ timeoutInput.addEventListener('blur', validateTimeout);
 // Update UI state during execution
 function setRunningState(running) {
     isRunning = running;
-    runButton.disabled = running;
     const btnText = runButton.querySelector('.btn-text');
     const btnSpinner = runButton.querySelector('.btn-spinner');
 
     if (running) {
-        btnText.textContent = 'Running...';
-        btnSpinner.hidden = false;
+        runButton.classList.add('stop-btn');
+        btnText.textContent = 'Stop';
+        btnSpinner.hidden = true;
         outputElement.classList.remove('output-empty');
     } else {
+        runButton.classList.remove('stop-btn');
         btnText.textContent = 'Run Code';
         btnSpinner.hidden = true;
     }
@@ -60,19 +62,40 @@ function clearOutput() {
 
 clearButton.addEventListener('click', clearOutput);
 
-// Stop SSE connection
-function stopExecution() {
+// Stop SSE connection and cancel execution
+async function stopExecution(cancelled = false) {
     if (eventSource) {
         eventSource.close();
         eventSource = null;
     }
+
+    // Cancel the execution on the server (only if user cancelled)
+    if (cancelled && currentExecutionId) {
+        try {
+            await fetch(`${API_BASE}/api/execute/cancel`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ execution_id: currentExecutionId })
+            });
+            appendOutput('\n--- Execution cancelled ---');
+        } catch (error) {
+            console.error('Cancel error:', error);
+        }
+        currentExecutionId = null;
+    } else {
+        // Normal completion, just clear the execution ID
+        currentExecutionId = null;
+    }
+
     setRunningState(false);
 }
 
 // Execute code
 async function executeCode() {
     if (isRunning) {
-        stopExecution();
+        stopExecution(true);
         return;
     }
 
@@ -110,19 +133,28 @@ async function executeCode() {
 
         const data = await response.json();
         const executionId = data.execution_id;
+        currentExecutionId = executionId;
 
         // Start SSE stream
         eventSource = new EventSource(`${API_BASE}/api/execute/stream?execution_id=${executionId}`);
 
         eventSource.onmessage = (event) => {
             const data = event.data;
-            if (data === '[DONE]') {
-                // Execution completed
-                stopExecution();
-                clearButton.hidden = false;
-                return;
+            // Parse JSON to extract the actual output
+            try {
+                const msg = JSON.parse(data);
+                if (msg.data) {
+                    appendOutput(msg.data);
+                }
+            } catch {
+                // Not JSON, append as-is (handles [DONE])
+                if (data === '[DONE]') {
+                    stopExecution();
+                    clearButton.hidden = false;
+                } else {
+                    appendOutput(data);
+                }
             }
-            appendOutput(data);
         };
 
         eventSource.onerror = (error) => {
@@ -158,5 +190,5 @@ codeTextarea.addEventListener('keydown', (event) => {
 
 // Cleanup on page unload
 window.addEventListener('beforeunload', () => {
-    stopExecution();
+    stopExecution(true);
 });

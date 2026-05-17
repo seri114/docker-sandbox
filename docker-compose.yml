@@ -38,4 +38,3 @@ services:
 networks:
   sandbox-net:
     driver: bridge
-    internal: true

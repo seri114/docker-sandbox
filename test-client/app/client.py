@@ -15,18 +15,20 @@ class SandboxClient:
         self.base_url = base_url
         self.client = httpx.Client(timeout=30.0)
 
-    def create_container(self, image: str = "python:3.12-alpine") -> str:
+    def create_container(
+        self, image: str = "python:3.12-alpine", code: str = ""
+    ) -> str:
         """Create a new container.
 
         Args:
             image: Docker image to use for the container
+            code: Python code to execute (optional, defaults to "print('Ready')")
 
         Returns:
             container_id: The ID of the created container
         """
         response = self.client.post(
-            f"{self.base_url}/containers/create",
-            json={"image": image}
+            f"{self.base_url}/containers/create", json={"image": image, "code": code}
         )
         data = response.json()
         return data["container_id"]
@@ -44,7 +46,7 @@ class SandboxClient:
         """
         response = self.client.post(
             f"{self.base_url}/containers/start",
-            json={"container_id": container_id, "code": code, "timeout": timeout}
+            json={"container_id": container_id, "code": code, "timeout": timeout},
         )
         return response.json()
 
@@ -58,8 +60,7 @@ class SandboxClient:
             Response data from the server
         """
         response = self.client.post(
-            f"{self.base_url}/containers/stop",
-            json={"container_id": container_id}
+            f"{self.base_url}/containers/stop", json={"container_id": container_id}
         )
         return response.json()
 
@@ -73,11 +74,49 @@ class SandboxClient:
             Streaming response object
         """
         return self.client.stream(
-            "GET",
-            f"{self.base_url}/containers/logs",
-            params={"id": container_id}
+            "GET", f"{self.base_url}/containers/logs", params={"id": container_id}
         )
 
     def close(self):
         """Close the HTTP client."""
         self.client.close()
+
+
+class AsyncSandboxClient:
+    """Async HTTP client for communicating with sandbox-controller."""
+
+    def __init__(self, base_url: str):
+        """Initialize the AsyncSandboxClient.
+
+        Args:
+            base_url: Base URL of the sandbox-controller API
+        """
+        self.base_url = base_url
+
+    async def create_container(
+        self, image: str = "python:3.12-alpine", code: str = ""
+    ) -> str:
+        """Create a new container."""
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.post(
+                f"{self.base_url}/containers/create",
+                json={"image": image, "code": code},
+            )
+            data = response.json()
+            return data["container_id"]
+
+    async def stream_logs(self, container_id: str):
+        """Stream logs from a container."""
+        client = httpx.AsyncClient(timeout=30.0)
+        try:
+            response = await client.stream(
+                "GET", f"{self.base_url}/containers/logs", params={"id": container_id}
+            )
+            return response, client
+        except:
+            await client.aclose()
+            raise
+
+    async def aclose(self):
+        """Close resources (no-op for this stateless client)."""
+        pass

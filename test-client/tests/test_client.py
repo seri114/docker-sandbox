@@ -1,14 +1,15 @@
 """Tests for SandboxClient."""
 
+from unittest.mock import Mock, patch
+
 import pytest
-from unittest.mock import Mock, patch, MagicMock
 from app.client import SandboxClient
 
 
 @pytest.fixture
 def mock_httpx_client():
     """Mock httpx.Client."""
-    with patch('app.client.httpx.Client') as mock:
+    with patch("app.client.httpx.Client") as mock:
         yield mock
 
 
@@ -34,7 +35,7 @@ def test_client_init(client, mock_httpx_client):
 
 def test_client_init_custom_base_url():
     """Test SandboxClient with custom base URL."""
-    with patch('app.client.httpx.Client') as mock:
+    with patch("app.client.httpx.Client") as mock:
         mock_client_instance = Mock()
         mock.return_value = mock_client_instance
 
@@ -56,8 +57,7 @@ def test_create_container(client):
 
     # Verify request
     client.client.post.assert_called_once_with(
-        "http://localhost:8000/containers/create",
-        json={"image": "python:3.12-alpine"}
+        "http://localhost:8000/containers/create", json={"image": "python:3.12-alpine"}
     )
 
     # Verify result
@@ -73,8 +73,7 @@ def test_create_container_default_image(client):
     result = client.create_container()
 
     client.client.post.assert_called_once_with(
-        "http://localhost:8000/containers/create",
-        json={"image": "python:3.12-alpine"}
+        "http://localhost:8000/containers/create", json={"image": "python:3.12-alpine"}
     )
     assert result == "container-456"
 
@@ -89,7 +88,7 @@ def test_start_container(client):
 
     client.client.post.assert_called_once_with(
         "http://localhost:8000/containers/start",
-        json={"container_id": "container-123", "code": "print('hello')", "timeout": 30}
+        json={"container_id": "container-123", "code": "print('hello')", "timeout": 30},
     )
     assert result == {"status": "started"}
 
@@ -104,7 +103,7 @@ def test_start_container_custom_timeout(client):
 
     client.client.post.assert_called_once_with(
         "http://localhost:8000/containers/start",
-        json={"container_id": "container-123", "code": "x = 1", "timeout": 60}
+        json={"container_id": "container-123", "code": "x = 1", "timeout": 60},
     )
     assert result == {"status": "started"}
 
@@ -118,8 +117,7 @@ def test_stop_container(client):
     result = client.stop_container("container-123")
 
     client.client.post.assert_called_once_with(
-        "http://localhost:8000/containers/stop",
-        json={"container_id": "container-123"}
+        "http://localhost:8000/containers/stop", json={"container_id": "container-123"}
     )
     assert result == {"status": "stopped"}
 
@@ -133,9 +131,7 @@ def test_stream_logs(client):
     result = client.stream_logs("container-123")
 
     client.client.stream.assert_called_once_with(
-        "GET",
-        "http://localhost:8000/containers/logs",
-        params={"id": "container-123"}
+        "GET", "http://localhost:8000/containers/logs", params={"id": "container-123"}
     )
     assert result == mock_response
 

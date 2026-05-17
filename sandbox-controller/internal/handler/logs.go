@@ -57,12 +57,12 @@ func NewLogsStreamer(reader io.Reader) *LogsStreamer {
 func (s *LogsStreamer) StreamTo(ch chan<- LogMessage) {
 	defer close(ch)
 
-	header := make([]byte, 16)
+	header := make([]byte, 8)
 	buf := make([]byte, 4096)
+	const maxSize = 1024 * 1024 // 1MB max log entry size
 
 	for {
-		// Read header: stream type (1 byte) + padding (7 bytes) + size (8 bytes)
-		// Docker uses: first byte is stream type, next 7 are zeros, then 8 bytes for size
+		// Read header: 8 bytes total (stream type + padding + size)
 		_, err := io.ReadFull(s.reader, header)
 		if err != nil {
 			return
@@ -71,15 +71,19 @@ func (s *LogsStreamer) StreamTo(ch chan<- LogMessage) {
 		// First byte is stream type (1=stdout, 2=stderr)
 		streamType := header[0]
 
-		// Bytes 8-15 contain the size (big endian in Docker's format)
-		size := uint64(header[8])<<56 | uint64(header[9])<<48 | uint64(header[10])<<40 |
-			uint64(header[11])<<32 | uint64(header[12])<<24 | uint64(header[13])<<16 |
-			uint64(header[14])<<8 | uint64(header[15])
+		// Bytes 4-7 contain the size (big endian)
+		size := uint32(header[4])<<24 | uint32(header[5])<<16 |
+			uint32(header[6])<<8 | uint32(header[7])
+
+		// Sanity check for size
+		if size > maxSize {
+			return
+		}
 
 		// Read data
 		var data []byte
 		if size > 0 {
-			if size <= uint64(len(buf)) {
+			if size <= uint32(len(buf)) {
 				data = buf[:size]
 			} else {
 				data = make([]byte, size)

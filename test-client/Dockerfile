@@ -1,11 +1,16 @@
-FROM python:3.12-slim
+FROM python:3.11-slim
 
 WORKDIR /app
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
-COPY . .
+# Copy pyproject.toml and install dependencies
+COPY pyproject.toml .
+RUN uv pip install --system --no-cache -e .
+
+# Copy application code
+COPY app ./app
 
 EXPOSE 8000
 

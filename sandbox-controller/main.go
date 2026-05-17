@@ -141,6 +141,8 @@ func (s *Server) handleLogs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	log.Printf("[DEBUG] Streaming logs for container: %s", containerID)
+
 	// Set SSE headers
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
@@ -148,16 +150,31 @@ func (s *Server) handleLogs(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 
 	// Create a context for logs streaming that can be cancelled
-	ctx, cancel := context.WithCancel(r.Context())
+	ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 	defer cancel()
+
+	// Wait for container to start and be running (max 5 seconds)
+	for i := 0; i < 10; i++ {
+		cont, err := s.dockerClient.InspectContainer(ctx, containerID)
+		if err == nil && cont.State.Running {
+			log.Printf("[DEBUG] Container %s is running", containerID)
+			break
+		}
+		if i < 9 {
+			time.Sleep(500 * time.Millisecond)
+		}
+	}
 
 	// Get logs with follow=true for streaming
 	logReader, err := s.dockerClient.ContainerLogs(ctx, containerID, true)
 	if err != nil {
+		log.Printf("[ERROR] Failed to get logs: %v", err)
 		http.Error(w, fmt.Sprintf("Failed to get logs: %s", err), http.StatusInternalServerError)
 		return
 	}
 	defer logReader.Close()
+
+	log.Printf("[DEBUG] Log reader created for container: %s", containerID)
 
 	// Create logs streamer
 	streamer := handler.NewLogsStreamer(logReader)
@@ -166,6 +183,8 @@ func (s *Server) handleLogs(w http.ResponseWriter, r *http.Request) {
 	// Start streaming in goroutine
 	go streamer.StreamTo(logChan)
 
+	log.Printf("[DEBUG] Starting SSE stream for container: %s", containerID)
+
 	// Flush the response writer periodically
 	flusher, ok := w.(http.Flusher)
 	if !ok {
@@ -173,21 +192,43 @@ func (s *Server) handleLogs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	messageCount := 0
+	emptyCount := 0
+
 	// Send SSE events
 	for {
 		select {
 		case msg, ok := <-logChan:
 			if !ok {
+				log.Printf("[DEBUG] Log channel closed for container: %s, messages sent: %d", containerID, messageCount)
 				return
 			}
+			messageCount++
+			emptyCount = 0
 			fmt.Fprintf(w, "data: %s\n\n", msg.ToJSON())
 			flusher.Flush()
 		case <-ctx.Done():
+			log.Printf("[DEBUG] Context cancelled for container: %s, messages sent: %d", containerID, messageCount)
 			return
-		case <-time.After(30 * time.Second):
-			// Send a keep-alive comment every 30 seconds
-			fmt.Fprintf(w, ": keep-alive\n\n")
-			flusher.Flush()
+		case <-time.After(1 * time.Second):
+			// Check if container is still running
+			cont, err := s.dockerClient.InspectContainer(ctx, containerID)
+			if err == nil && !cont.State.Running && cont.State.ExitCode == 0 {
+				// Container finished successfully, check if we got any logs
+				if messageCount == 0 {
+					// No logs received, container might have finished too quickly
+					log.Printf("[DEBUG] Container finished with no logs, sending completion message")
+					fmt.Fprintf(w, "data: {\"stream\":\"stdout\",\"data\":\"(no output)\"}\n\n")
+					flusher.Flush()
+				}
+				return
+			}
+			emptyCount++
+			if emptyCount > 30 {
+				// No logs for 30 seconds, close stream
+				log.Printf("[DEBUG] No logs for 30 seconds, closing stream")
+				return
+			}
 		}
 	}
 }

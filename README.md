@@ -84,9 +84,76 @@ curl "http://localhost:18080/containers/logs?id=..."
 docker compose down
 ```
 
+## 開発ツール
+
+### Python (test-client)
+- **uv**: 高速なパッケージマネージャー
+- **ruff**: 高速なPython linter/formatter
+
+```bash
+cd test-client
+
+# 依存関係インストール
+uv sync
+
+# Lintチェック
+ruff check .
+
+# コードフォーマット
+ruff format .
+```
+
+### Go (sandbox-controller)
+- **gofmt**: 標準のフォーマッタ
+
+```bash
+cd sandbox-controller
+
+# フォーマット
+gofmt -w .
+```
+
 ## 既知の問題
 
 ### Docker Desktop for Mac
 - **Unix Socketプロキシ**: ContainerStart APIが遅延する問題があります
 - **回避策**: 非同期実装により即座にレスポンスを返します
 - **ポートマッピング**: 一部の環境でポート8080が正常にバインドされない場合があります
+
+## テスト
+
+### Goテスト（sandbox-controller）
+
+```bash
+# 単体テスト
+cd sandbox-controller
+go test ./...
+
+# 統合テスト（Dockerが必要）
+go test -v ./... -run Integration
+
+# E2Eテスト（Dockerが必要）
+go test -v ./... -run E2E
+```
+
+### Pythonテスト（test-client）
+
+```bash
+# pytestが必要
+pip install pytest pytest-asyncio httpx
+
+# 単体テスト
+cd test-client
+pytest
+
+# E2Eテスト（controllerが必要）
+pytest tests/test_e2e.py -v
+```
+
+### テストカバレッジ
+
+| テスト種類 | ファイル | 説明 |
+|------------|---------|------|
+| 単体テスト | `*_test.go` | モックを使った個別機能のテスト |
+| 統合テスト | `*_integration_test.go` | 実際のDockerを使ったテスト |
+| E2Eテスト | `e2e_test.go` | 完全なフローのエンドツーエンドテスト |

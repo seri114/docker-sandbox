@@ -55,6 +55,14 @@ func TestE2ECodeExecution(t *testing.T) {
 	}
 	defer dockerClient.Close()
 
+	// Test Docker connection by trying to list containers
+	ctx, cancel := dockerClient.Context()
+	defer cancel()
+	_, err = dockerClient.Client().ContainerList(ctx, container.ListOptions{All: true})
+	if err != nil {
+		t.Skipf("Cannot connect to Docker daemon: %v", err)
+	}
+
 	// Create test server
 	server := httptest.NewServer(setupTestRouter(dockerClient))
 	defer server.Close()
@@ -218,6 +226,14 @@ func TestE2EStreamingWithDelay(t *testing.T) {
 		t.Skipf("Docker not available: %v", err)
 	}
 	defer dockerClient.Close()
+
+	// Test Docker connection by trying to list containers
+	ctx, cancel := dockerClient.Context()
+	defer cancel()
+	_, err = dockerClient.Client().ContainerList(ctx, container.ListOptions{All: true})
+	if err != nil {
+		t.Skipf("Cannot connect to Docker daemon: %v", err)
+	}
 
 	server := httptest.NewServer(setupTestRouter(dockerClient))
 	defer server.Close()

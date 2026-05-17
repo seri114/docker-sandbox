@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -18,6 +19,24 @@ import (
 	"github.com/seri114/docker-sandbox/config"
 	"github.com/seri114/docker-sandbox/internal/docker"
 )
+
+// getDockerHost returns the Docker socket path
+func getDockerHost() string {
+	if host := os.Getenv("DOCKER_HOST"); host != "" {
+		return host
+	}
+	// Try common Docker socket paths
+	paths := []string{
+		"/var/run/docker.sock",
+		os.ExpandEnv("/Users/$USER/.docker/run/docker.sock"),
+	}
+	for _, path := range paths {
+		if _, err := os.Stat(path); err == nil {
+			return "unix://" + path
+		}
+	}
+	return "unix:///var/run/docker.sock"
+}
 
 // TestE2ECodeExecution tests the complete flow: create container, start, stream logs.
 func TestE2ECodeExecution(t *testing.T) {
@@ -313,6 +332,11 @@ func setupTestRouter(dockerClient *docker.DockerClient) *mux.Router {
 		}
 		if req.CPU == 0 {
 			req.CPU = 0.5
+		}
+
+		if err := req.Validate(); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
 		}
 
 		ctx, cancel := dockerClient.Context()

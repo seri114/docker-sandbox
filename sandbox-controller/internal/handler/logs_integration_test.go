@@ -2,7 +2,6 @@ package handler
 
 import (
 	"bytes"
-	"os"
 	"testing"
 	"time"
 
@@ -11,14 +10,6 @@ import (
 	"github.com/seri114/docker-sandbox/config"
 	"github.com/seri114/docker-sandbox/internal/docker"
 )
-
-// getDockerHost returns the Docker socket path
-func getDockerHost() string {
-	if host := os.Getenv("DOCKER_HOST"); host != "" {
-		return host
-	}
-	return "unix:///var/run/docker.sock"
-}
 
 // TestLogsStreamerIntegration tests LogsStreamer with actual Docker container logs.
 // This is an integration test that requires a running Docker daemon.

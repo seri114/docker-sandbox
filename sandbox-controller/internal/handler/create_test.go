@@ -65,6 +65,94 @@ func TestCreateContainerRequest(t *testing.T) {
 	} else if tmpfs != "mode=1777" {
 		t.Errorf("expected Tmpfs /tmp to be 'mode=1777', got '%s'", tmpfs)
 	}
+
+	// Test new security settings
+	if !hostConfig.ReadonlyRootfs {
+		t.Error("expected ReadonlyRootfs to be true")
+	}
+
+	if len(hostConfig.SecurityOpt) == 0 || hostConfig.SecurityOpt[0] != "no-new-privileges" {
+		t.Errorf("expected SecurityOpt to contain 'no-new-privileges', got %v", hostConfig.SecurityOpt)
+	}
+
+	if hostConfig.Resources.PidsLimit == nil || *hostConfig.Resources.PidsLimit != 100 {
+		t.Errorf("expected PidsLimit to be 100, got %v", hostConfig.Resources.PidsLimit)
+	}
+
+	if hostConfig.Resources.MemorySwap != -1 {
+		t.Errorf("expected MemorySwap to be -1 (disabled), got %d", hostConfig.Resources.MemorySwap)
+	}
+}
+
+func TestCreateContainerRequestValidate(t *testing.T) {
+	validRequest := &CreateContainerRequest{
+		Image:  "python:3.11-alpine",
+		Code:   "print('hello')",
+		Memory: 128 * 1024 * 1024,
+		CPU:    0.5,
+	}
+	if err := validRequest.Validate(); err != nil {
+		t.Errorf("valid request should not return error, got: %v", err)
+	}
+
+	emptyImage := &CreateContainerRequest{
+		Code:   "print('hello')",
+		Memory: 128 * 1024 * 1024,
+		CPU:    0.5,
+	}
+	if err := emptyImage.Validate(); err == nil {
+		t.Error("empty image should return error")
+	}
+
+	emptyCode := &CreateContainerRequest{
+		Image:  "python:3.11-alpine",
+		Code:   "",
+		Memory: 128 * 1024 * 1024,
+		CPU:    0.5,
+	}
+	if err := emptyCode.Validate(); err == nil {
+		t.Error("empty code should return error")
+	}
+
+	tooLargeCode := &CreateContainerRequest{
+		Image:  "python:3.11-alpine",
+		Code:   string(make([]byte, maxCodeSize+1)),
+		Memory: 128 * 1024 * 1024,
+		CPU:    0.5,
+	}
+	if err := tooLargeCode.Validate(); err == nil {
+		t.Error("code exceeding max size should return error")
+	}
+
+	invalidMemory := &CreateContainerRequest{
+		Image:  "python:3.11-alpine",
+		Code:   "print('hello')",
+		Memory: 0,
+		CPU:    0.5,
+	}
+	if err := invalidMemory.Validate(); err == nil {
+		t.Error("zero memory should return error")
+	}
+
+	invalidCPU := &CreateContainerRequest{
+		Image:  "python:3.11-alpine",
+		Code:   "print('hello')",
+		Memory: 128 * 1024 * 1024,
+		CPU:    1.5,
+	}
+	if err := invalidCPU.Validate(); err == nil {
+		t.Error("CPU > 1 should return error")
+	}
+
+	zeroCPU := &CreateContainerRequest{
+		Image:  "python:3.11-alpine",
+		Code:   "print('hello')",
+		Memory: 128 * 1024 * 1024,
+		CPU:    0,
+	}
+	if err := zeroCPU.Validate(); err == nil {
+		t.Error("CPU <= 0 should return error")
+	}
 }
 
 func TestCreateContainerResponse(t *testing.T) {

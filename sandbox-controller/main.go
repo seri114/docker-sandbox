@@ -58,6 +58,12 @@ func (s *Server) handleCreate(w http.ResponseWriter, r *http.Request) {
 		req.CPU = 0.5 // 0.5 CPU
 	}
 
+	// Validate request
+	if err := req.Validate(); err != nil {
+		http.Error(w, fmt.Sprintf("Invalid request: %s", err), http.StatusBadRequest)
+		return
+	}
+
 	ctx, cancel := s.dockerClient.Context()
 	defer cancel()
 

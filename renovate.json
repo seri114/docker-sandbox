@@ -3,6 +3,15 @@
   "extends": [
     "config:base"
   ],
+  "enabledManagers": [
+    "gomod",
+    "pep621",
+    "uv",
+    "pre-commit",
+    "docker-compose",
+    "dockerfile",
+    "github-actions"
+  ],
   "packageRules": [
     {
       "description": "Pre-commit hooks auto-update with SHA version tags",
@@ -21,21 +30,40 @@
       "matchManagers": ["github-actions"],
       "automerge": true,
       "automergeType": "pr",
-      "addLabels": ["github-actions", "dependencies"]
+      "addLabels": ["github-actions", "dependencies"],
+      "pinDigests": true
     },
     {
-      "description": "Python dev dependencies",
-      "matchManagers": ["pip"],
-      "matchDepTypes": ["dev"],
+      "description": "Python dependencies via uv/pep621",
+      "matchManagers": ["pep621", "uv"],
       "automerge": true,
       "automergeType": "pr",
-      "addLabels": ["python", "dependencies"]
+      "addLabels": ["python", "dependencies"],
+      "groupName": "Python dependencies"
     },
     {
       "description": "Go module dependencies",
       "matchManagers": ["gomod"],
       "automerge": false,
-      "addLabels": ["go", "dependencies"]
+      "addLabels": ["go", "dependencies"],
+      "groupName": "Go dependencies"
+    },
+    {
+      "description": "Docker Compose services",
+      "matchManagers": ["docker-compose"],
+      "automerge": true,
+      "automergeType": "pr",
+      "addLabels": ["docker", "dependencies"],
+      "groupName": "Docker Compose images"
+    },
+    {
+      "description": "Dockerfile base images",
+      "matchManagers": ["dockerfile"],
+      "automerge": true,
+      "automergeType": "pr",
+      "addLabels": ["docker", "dependencies"],
+      "groupName": "Docker base images",
+      "pinDigests": true
     }
   ],
   "labels": ["dependencies"],
@@ -44,5 +72,12 @@
   "prConcurrentLimit": 5,
   "prHourlyLimit": 2,
   "prCreation": "immediate",
-  "minimumReleaseAge": "7 days"
+  "minimumReleaseAge": "7 days",
+  "rebaseWhen": "conflicted",
+  "assignAutomerge": false,
+  "updateNotScheduled": false,
+  "separateMajorMinor": true,
+  "commitMessagePrefix": "deps:",
+  "commitMessageAction": "update",
+  "semanticCommits": "enabled"
 }

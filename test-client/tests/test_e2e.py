@@ -154,9 +154,9 @@ print("Done")"""
                 # If we get here, container still exists - check if it's stopped/exited
                 if response.status_code == 200:
                     data = response.json()
-                    assert (
-                        data["State"]["Running"] is False
-                    ), "Container should be stopped"
+                    assert data["State"]["Running"] is False, (
+                        "Container should be stopped"
+                    )
             except httpx.HTTPStatusError as e:
                 # 404 is ok - container was removed
                 assert e.response.status_code == 404

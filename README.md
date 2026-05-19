@@ -92,7 +92,7 @@ commit時に自動でフォーマットとリントを実行します。
 
 ```bash
 # インストール（初回のみ）
-pip install pre-commit
+uv pip install pre-commit
 pre-commit install
 
 # 手動実行

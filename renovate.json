@@ -1,0 +1,38 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:base"
+  ],
+  "packageRules": [
+    {
+      "description": "Pre-commit hooks auto-update",
+      "matchManagers": ["pre-commit"],
+      "automerge": true,
+      "automergeType": "pr",
+      "platformAutomerge": true
+    },
+    {
+      "description": "GitHub Actions dependencies",
+      "matchManagers": ["github-actions"],
+      "automerge": true,
+      "automergeType": "pr"
+    },
+    {
+      "description": "Python dev dependencies",
+      "matchManagers": ["pip"],
+      "matchDepTypes": ["dev"],
+      "automerge": true,
+      "automergeType": "pr"
+    },
+    {
+      "description": "Go module dependencies",
+      "matchManagers": ["gomod"],
+      "automerge": false
+    }
+  ],
+  "labels": ["dependencies"],
+  "schedule": ["every weekend"],
+  "timezone": "Asia/Tokyo",
+  "prConcurrentLimit": 5,
+  "prHourlyLimit": 2
+}

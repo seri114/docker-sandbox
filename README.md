@@ -86,6 +86,27 @@ docker compose down
 
 ## 開発ツール
 
+### Pre-commit (コード品質自動チェック)
+
+commit時に自動でフォーマットとリントを実行します。
+
+```bash
+# インストール（初回のみ）
+pip install pre-commit
+pre-commit install
+
+# 手動実行
+pre-commit run --all-files
+
+# スキップしてcommit
+git commit --no-verify
+```
+
+**チェック内容:**
+- Go: `gofmt`, `go vet`
+- Python: `ruff` (フォーマット + リント)
+- 全体: 末尾空白、ファイル末尾改行、大ファイル警告
+
 ### Python (test-client)
 - **uv**: 高速なパッケージマネージャー
 - **ruff**: 高速なPython linter/formatter

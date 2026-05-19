@@ -9,16 +9,16 @@ repos:
     hooks:
       - id: gofmt
         name: gofmt
-        entry: gofmt -w -l
+        entry: bash -c 'cd sandbox-controller && gofmt -w -l .'  # shell: true equivalent
         language: system
-        files: \.go$
-        pass_filenames: true
+        files: ^sandbox-controller/.*\.go$
+        pass_filenames: false
 
       - id: go-vet
         name: go vet
-        entry: go vet ./...
+        entry: bash -c 'cd sandbox-controller && go vet ./...'
         language: system
-        files: \.go$
+        files: ^sandbox-controller/.*\.go$
         pass_filenames: false
 
   # Python formatting and linting (ruff)

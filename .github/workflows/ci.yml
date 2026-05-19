@@ -80,8 +80,29 @@ jobs:
         working-directory: ./test-client
         run: |
           uv venv
-          uv pip install pytest pytest-asyncio httpx ruff
-          uv sync
+          uv sync --group dev
+
+      - name: Run ruff check
+        working-directory: ./test-client
+        run: |
+          source .venv/bin/activate
+          ruff check .
+
+      - name: Run ruff format check
+        working-directory: ./test-client
+        run: |
+          source .venv/bin/activate
+          if [ -n "$(ruff format --check)" ]; then
+            echo "Python code is not formatted"
+            ruff format --diff
+            exit 1
+          fi
+
+      - name: Run pytest
+        working-directory: ./test-client
+        run: |
+          source .venv/bin/activate
+          pytest -v --cov=. --cov-report=xml
 
       - name: Run ruff check
         working-directory: ./test-client

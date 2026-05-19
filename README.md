@@ -180,3 +180,7 @@ pytest tests/test_e2e.py -v
 | 単体テスト | `*_test.go` | モックを使った個別機能のテスト |
 | 統合テスト | `*_integration_test.go` | 実際のDockerを使ったテスト |
 | E2Eテスト | `e2e_test.go` | 完全なフローのエンドツーエンドテスト |
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

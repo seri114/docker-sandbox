@@ -51,7 +51,7 @@ jobs:
 
       - name: Run unit tests
         working-directory: ./sandbox-controller
-        run: go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
+        run: go test -v -race -coverprofile=coverage.out ./...
 
       - name: Upload coverage
         uses: codecov/codecov-action@v4
@@ -92,34 +92,13 @@ jobs:
         working-directory: ./test-client
         run: |
           source .venv/bin/activate
-          if [ -n "$(ruff format --check)" ]; then
-            echo "Python code is not formatted"
-            ruff format --diff
-            exit 1
-          fi
+          ruff format --check .
 
       - name: Run pytest
         working-directory: ./test-client
         run: |
           source .venv/bin/activate
           pytest -v --cov=. --cov-report=xml
-
-      - name: Run ruff check
-        working-directory: ./test-client
-        run: ruff check .
-
-      - name: Run ruff format check
-        working-directory: ./test-client
-        run: |
-          if [ -n "$(ruff format --check)" ]; then
-            echo "Python code is not formatted"
-            ruff format --diff
-            exit 1
-          fi
-
-      - name: Run pytest
-        working-directory: ./test-client
-        run: pytest -v --cov=. --cov-report=xml
 
       - name: Upload coverage
         uses: codecov/codecov-action@v4

@@ -65,7 +65,7 @@ func (r *CreateContainerRequest) ToHostConfig() *container.HostConfig {
 			NanoCPUs:   int64(r.CPU * 1000000000),
 			PidsLimit:  &pidsLimit,
 		},
-		CapDrop:       []string{"ALL"},
+		CapDrop: []string{"ALL"},
 		Tmpfs: map[string]string{
 			"/tmp": "mode=1777",
 		},

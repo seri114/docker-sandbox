@@ -30,6 +30,7 @@
       "matchManagers": ["github-actions"],
       "automerge": true,
       "automergeType": "pr",
+      "platformAutomerge": true,
       "addLabels": ["github-actions", "dependencies"],
       "pinDigests": true
     },
@@ -38,13 +39,16 @@
       "matchManagers": ["pep621", "uv"],
       "automerge": true,
       "automergeType": "pr",
+      "platformAutomerge": true,
       "addLabels": ["python", "dependencies"],
       "groupName": "Python dependencies"
     },
     {
       "description": "Go module dependencies",
       "matchManagers": ["gomod"],
-      "automerge": false,
+      "automerge": true,
+      "automergeType": "pr",
+      "platformAutomerge": true,
       "addLabels": ["go", "dependencies"],
       "groupName": "Go dependencies"
     },
@@ -53,6 +57,7 @@
       "matchManagers": ["docker-compose"],
       "automerge": true,
       "automergeType": "pr",
+      "platformAutomerge": true,
       "addLabels": ["docker", "dependencies"],
       "groupName": "Docker Compose images"
     },
@@ -61,6 +66,7 @@
       "matchManagers": ["dockerfile"],
       "automerge": true,
       "automergeType": "pr",
+      "platformAutomerge": true,
       "addLabels": ["docker", "dependencies"],
       "groupName": "Docker base images",
       "pinDigests": true
@@ -74,7 +80,7 @@
   "prCreation": "immediate",
   "minimumReleaseAge": "7 days",
   "rebaseWhen": "conflicted",
-  "assignAutomerge": false,
+  "assignAutomerge": true,
   "updateNotScheduled": false,
   "separateMajorMinor": true,
   "commitMessagePrefix": "deps:",

@@ -4,16 +4,18 @@ Dockerコンテナ内でPythonコードを安全に実行するPOCシステム
 
 ## セキュリティ
 
-### sandbox-controller
-- **Alpineベース**: 最小攻撃表面積のベースイメージを使用
-- **非rootユーザー**: nobodyユーザーで実行
-
 ### sandbox-container
 - **非rootユーザー**: nobodyユーザーで実行（UID 65534）
 - **capability削除**: 全ケーパビリティを削除（CapDrop: ALL）
 - **ネットワーク分離**: 外部通信を完全に遮断（NetworkMode: none）
 - **リソース制限**: CPU/メモリ使用量を制限
 - **Tmpfs**: /tmpを一時ファイルシステムとしてマウント
+- **読み取り専用ルート**: ファイルシステムへの書き込みを禁止（ReadonlyRootfs: true）
+- **権限昇格防止**: setuid/setgidによる権限昇格を防止（no-new-privileges）
+- **PID制限**: Fork bomb攻撃を防止（PidsLimit: 100）
+- **スワップ無効化**: メモリ制限を厳格化（MemorySwap: -1）
+- **入力検証**: コードサイズ制限（1MB）とパラメータ検証
+- **Seccomp**: システムコール制限（ネットワーク関連syscall削除）
 
 ### Docker Socket
 - **読み取り専用マウント**: 書き込み権限なしでマウント
@@ -86,6 +88,27 @@ docker compose down
 
 ## 開発ツール
 
+### Pre-commit (コード品質自動チェック)
+
+commit時に自動でフォーマットとリントを実行します。
+
+```bash
+# インストール（初回のみ）
+uv pip install pre-commit
+pre-commit install
+
+# 手動実行
+pre-commit run --all-files
+
+# スキップしてcommit
+git commit --no-verify
+```
+
+**チェック内容:**
+- Go: `gofmt`, `go vet`
+- Python: `ruff` (フォーマット + リント)
+- 全体: 末尾空白、ファイル末尾改行、大ファイル警告
+
 ### Python (test-client)
 - **uv**: 高速なパッケージマネージャー
 - **ruff**: 高速なPython linter/formatter
@@ -140,7 +163,7 @@ go test -v ./... -run E2E
 
 ```bash
 # pytestが必要
-pip install pytest pytest-asyncio httpx
+uv pip install pytest pytest-asyncio httpx
 
 # 単体テスト
 cd test-client

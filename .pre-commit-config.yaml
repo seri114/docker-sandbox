@@ -1,0 +1,54 @@
+# Pre-commit hooks for code quality
+# Install: uv pip install pre-commit
+# Setup: pre-commit install
+# Run manually: pre-commit run --all-files
+
+repos:
+  # Go formatting and linting
+  - repo: local
+    hooks:
+      - id: gofmt
+        name: gofmt
+        entry: gofmt -w -l
+        language: system
+        files: \.go$
+        pass_filenames: true
+
+      - id: go-vet
+        name: go vet
+        entry: go vet ./...
+        language: system
+        files: \.go$
+        pass_filenames: false
+
+  # Python formatting and linting (ruff)
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: 0710b94280408eef12748cde4782972942370ad2  # v0.8.0
+    hooks:
+      - id: ruff
+        args: [--fix]
+        files: ^(test-client|webui)/.*\.py$
+
+      - id: ruff-format
+        files: ^(test-client|webui)/.*\.py$
+
+  # General file checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: cef0300fd0fc4d2a87a85fa2093c6b283ea36f4b  # v5.0.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: ^(test-client/webui)/.*\.(min\.)?(js|css)$
+
+      - id: end-of-file-fixer
+        exclude: ^(test-client/webui)/.*\.(min\.)?(js|css)$
+
+      - id: check-yaml
+        files: \.ya?ml$
+
+      - id: check-json
+        files: \.json$
+
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+
+      - id: check-merge-conflict

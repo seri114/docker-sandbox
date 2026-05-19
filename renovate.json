@@ -5,34 +5,44 @@
   ],
   "packageRules": [
     {
-      "description": "Pre-commit hooks auto-update",
+      "description": "Pre-commit hooks auto-update with SHA version tags",
       "matchManagers": ["pre-commit"],
       "automerge": true,
       "automergeType": "pr",
-      "platformAutomerge": true
+      "platformAutomerge": true,
+      "addLabels": ["pre-commit", "dependencies"],
+      "pinDigests": true,
+      "commitMessageAction": "Update",
+      "commitMessageTopic": "{{depName}} {{newValue}}",
+      "semanticCommitType": "chore"
     },
     {
       "description": "GitHub Actions dependencies",
       "matchManagers": ["github-actions"],
       "automerge": true,
-      "automergeType": "pr"
+      "automergeType": "pr",
+      "addLabels": ["github-actions", "dependencies"]
     },
     {
       "description": "Python dev dependencies",
       "matchManagers": ["pip"],
       "matchDepTypes": ["dev"],
       "automerge": true,
-      "automergeType": "pr"
+      "automergeType": "pr",
+      "addLabels": ["python", "dependencies"]
     },
     {
       "description": "Go module dependencies",
       "matchManagers": ["gomod"],
-      "automerge": false
+      "automerge": false,
+      "addLabels": ["go", "dependencies"]
     }
   ],
   "labels": ["dependencies"],
   "schedule": ["every weekend"],
   "timezone": "Asia/Tokyo",
   "prConcurrentLimit": 5,
-  "prHourlyLimit": 2
+  "prHourlyLimit": 2,
+  "prCreation": "immediate",
+  "minimumReleaseAge": "7 days"
 }

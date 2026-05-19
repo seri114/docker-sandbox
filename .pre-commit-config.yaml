@@ -23,7 +23,7 @@ repos:
 
   # Python formatting and linting (ruff)
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: 0710b94280408eef12748cde4782972942370ad2
+    rev: 0710b94280408eef12748cde4782972942370ad2  # v0.8.0
     hooks:
       - id: ruff
         args: [--fix]
@@ -34,7 +34,7 @@ repos:
 
   # General file checks
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: cef0300fd0fc4d2a87a85fa2093c6b283ea36f4b
+    rev: cef0300fd0fc4d2a87a85fa2093c6b283ea36f4b  # v5.0.0
     hooks:
       - id: trailing-whitespace
         exclude: ^(test-client/webui)/.*\.(min\.)?(js|css)$

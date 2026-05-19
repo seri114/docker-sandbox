@@ -10,7 +10,7 @@ const maxCodeSize = 1 * 1024 * 1024 // 1MB
 
 // CreateContainerRequest represents a request to create a new sandbox container.
 type CreateContainerRequest struct {
-	Image  string  `json:"image"`  // Container image to use (e.g., "python:3.11-alpine")
+	Image  string  `json:"image"`  // Container image to use (e.g., "python:3.12-alpine")
 	Code   string  `json:"code"`   // Python code to execute
 	Memory int64   `json:"memory"` // Memory limit in bytes
 	CPU    float64 `json:"cpu"`    // CPU quota (0.5 = 50% of a CPU)

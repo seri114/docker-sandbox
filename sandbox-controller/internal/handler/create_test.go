@@ -6,7 +6,7 @@ import (
 
 func TestCreateContainerRequest(t *testing.T) {
 	req := &CreateContainerRequest{
-		Image:  "python:3.11-alpine",
+		Image:  "python:3.12-alpine",
 		Code:   "print('hello')",
 		Memory: 128 * 1024 * 1024, // 128MB
 		CPU:    0.5,
@@ -18,8 +18,8 @@ func TestCreateContainerRequest(t *testing.T) {
 		t.Fatal("expected non-nil config")
 	}
 
-	if config.Image != "python:3.11-alpine" {
-		t.Errorf("expected image 'python:3.11-alpine', got '%s'", config.Image)
+	if config.Image != "python:3.12-alpine" {
+		t.Errorf("expected image 'python:3.12-alpine', got '%s'", config.Image)
 	}
 
 	expectedCmd := []string{"python", "-u", "-c", "print('hello')"}
@@ -86,7 +86,7 @@ func TestCreateContainerRequest(t *testing.T) {
 
 func TestCreateContainerRequestValidate(t *testing.T) {
 	validRequest := &CreateContainerRequest{
-		Image:  "python:3.11-alpine",
+		Image:  "python:3.12-alpine",
 		Code:   "print('hello')",
 		Memory: 128 * 1024 * 1024,
 		CPU:    0.5,
@@ -105,7 +105,7 @@ func TestCreateContainerRequestValidate(t *testing.T) {
 	}
 
 	emptyCode := &CreateContainerRequest{
-		Image:  "python:3.11-alpine",
+		Image:  "python:3.12-alpine",
 		Code:   "",
 		Memory: 128 * 1024 * 1024,
 		CPU:    0.5,
@@ -115,7 +115,7 @@ func TestCreateContainerRequestValidate(t *testing.T) {
 	}
 
 	tooLargeCode := &CreateContainerRequest{
-		Image:  "python:3.11-alpine",
+		Image:  "python:3.12-alpine",
 		Code:   string(make([]byte, maxCodeSize+1)),
 		Memory: 128 * 1024 * 1024,
 		CPU:    0.5,
@@ -125,7 +125,7 @@ func TestCreateContainerRequestValidate(t *testing.T) {
 	}
 
 	invalidMemory := &CreateContainerRequest{
-		Image:  "python:3.11-alpine",
+		Image:  "python:3.12-alpine",
 		Code:   "print('hello')",
 		Memory: 0,
 		CPU:    0.5,
@@ -135,7 +135,7 @@ func TestCreateContainerRequestValidate(t *testing.T) {
 	}
 
 	invalidCPU := &CreateContainerRequest{
-		Image:  "python:3.11-alpine",
+		Image:  "python:3.12-alpine",
 		Code:   "print('hello')",
 		Memory: 128 * 1024 * 1024,
 		CPU:    1.5,
@@ -145,7 +145,7 @@ func TestCreateContainerRequestValidate(t *testing.T) {
 	}
 
 	zeroCPU := &CreateContainerRequest{
-		Image:  "python:3.11-alpine",
+		Image:  "python:3.12-alpine",
 		Code:   "print('hello')",
 		Memory: 128 * 1024 * 1024,
 		CPU:    0,

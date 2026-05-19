@@ -31,7 +31,6 @@ jobs:
         run: |
           docker pull alpine:latest
           docker pull python:3.12-alpine
-          docker pull python:3.11-alpine
 
       - name: Download dependencies
         working-directory: ./sandbox-controller
@@ -63,9 +62,6 @@ jobs:
   python-test:
     name: Python Tests
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ['3.12', '3.11', '3.10']
 
     steps:
       - uses: actions/checkout@v4
@@ -75,10 +71,10 @@ jobs:
         with:
           version: "latest"
 
-      - name: Set up Python ${{ matrix.python-version }}
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: '3.12'
 
       - name: Create virtual environment and install dependencies
         working-directory: ./test-client
@@ -165,7 +161,6 @@ jobs:
         run: |
           docker pull alpine:latest
           docker pull python:3.12-alpine
-          docker pull python:3.11-alpine
 
       - name: Install dependencies
         run: |

@@ -14,6 +14,11 @@ jobs:
       matrix:
         go-version: ['1.23', '1.22']
 
+    services:
+      docker:
+        image: docker:dind
+        options: --privileged
+
     steps:
       - uses: actions/checkout@v4
 
@@ -21,6 +26,12 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.go-version }}
+
+      - name: Pull Docker images
+        run: |
+          docker pull alpine:latest
+          docker pull python:3.12-alpine
+          docker pull python:3.11-alpine
 
       - name: Download dependencies
         working-directory: ./sandbox-controller
@@ -69,9 +80,10 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install dependencies
+      - name: Create virtual environment and install dependencies
         working-directory: ./test-client
         run: |
+          uv venv
           uv pip install pytest pytest-asyncio httpx ruff
           uv sync
 
@@ -110,6 +122,11 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+
       - name: Install pre-commit
         run: |
           pip install pre-commit
@@ -144,9 +161,16 @@ jobs:
       - name: Set up uv
         uses: astral-sh/setup-uv@v1
 
+      - name: Pull Docker images
+        run: |
+          docker pull alpine:latest
+          docker pull python:3.12-alpine
+          docker pull python:3.11-alpine
+
       - name: Install dependencies
         run: |
           cd test-client
+          uv venv
           uv sync
 
       - name: Run Go integration tests

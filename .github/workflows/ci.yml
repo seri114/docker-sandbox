@@ -51,13 +51,7 @@ jobs:
 
       - name: Run unit tests
         working-directory: ./sandbox-controller
-        run: go test -v -race -coverprofile=coverage.out ./...
-
-      - name: Upload coverage
-        uses: codecov/codecov-action@v4
-        with:
-          files: ./sandbox-controller/coverage.out
-          flags: go
+        run: go test -v -race ./...
 
   python-test:
     name: Python Tests

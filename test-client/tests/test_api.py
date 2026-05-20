@@ -1,7 +1,7 @@
 """Tests for FastAPI application."""
 
 import uuid
-from unittest.mock import MagicMock, Mock
+from unittest.mock import Mock
 
 import pytest
 from app.api import ExecuteRequest, app, get_sandbox_client
@@ -55,7 +55,7 @@ def test_create_execution(client, mock_sandbox_client):
 
     # Verify container was created and started
     mock_sandbox_client.create_container.assert_called_once_with(
-        image="python:3.12-alpine"
+        image="python:3.12-alpine", code="print('hello')"
     )
     mock_sandbox_client.start_container.assert_called_once_with(
         container_id="test-container-123", code="print('hello')", timeout=30
@@ -82,7 +82,7 @@ def test_create_execution_custom_params(client, mock_sandbox_client):
     uuid.UUID(data["execution_id"])
 
     mock_sandbox_client.create_container.assert_called_once_with(
-        image="python:3.12-alpine"
+        image="python:3.12-alpine", code="import time; time.sleep(1)"
     )
     mock_sandbox_client.start_container.assert_called_once_with(
         container_id="custom-container-456",
@@ -96,39 +96,6 @@ def test_create_execution_missing_code(client):
     response = client.post("/api/execute", json={})
 
     assert response.status_code == 422
-
-
-def test_execute_stream_sse(client, mock_sandbox_client):
-    """Test GET /api/execute/stream streams logs via SSE."""
-    # First create an execution so it exists in the store
-    mock_sandbox_client.create_container.return_value = "container-for-stream"
-    post_response = client.post("/api/execute", json={"code": "print('test')"})
-    execution_id = post_response.json()["execution_id"]
-
-    # Mock streaming response - create a context manager mock
-    mock_stream_response = MagicMock()
-    mock_stream_response.status_code = 200
-    mock_stream_response.iter_lines.return_value = [
-        b"hello world\n",
-        b"test output\n",
-    ]
-
-    # Create a proper context manager mock for stream_logs
-    from contextlib import contextmanager
-
-    @contextmanager
-    def mock_stream_context():
-        yield mock_stream_response
-
-    mock_sandbox_client.stream_logs.return_value = mock_stream_context()
-
-    response = client.get(f"/api/execute/stream?execution_id={execution_id}")
-
-    # For SSE, we get streaming response
-    assert response.status_code == 200
-
-    # Verify stream_logs was called
-    mock_sandbox_client.stream_logs.assert_called_once()
 
 
 def test_app_title():

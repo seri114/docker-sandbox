@@ -53,11 +53,12 @@ def test_create_container(client):
     client.client.post.return_value = mock_response
 
     # Call method
-    result = client.create_container(image="python:3.12-alpine")
+    result = client.create_container(image="python:3.12-alpine", code="print('hello')")
 
     # Verify request
     client.client.post.assert_called_once_with(
-        "http://localhost:8000/containers/create", json={"image": "python:3.12-alpine"}
+        "http://localhost:8000/containers/create",
+        json={"image": "python:3.12-alpine", "code": "print('hello')"},
     )
 
     # Verify result
@@ -70,10 +71,11 @@ def test_create_container_default_image(client):
     mock_response.json.return_value = {"container_id": "container-456"}
     client.client.post.return_value = mock_response
 
-    result = client.create_container()
+    result = client.create_container(code="print('test')")
 
     client.client.post.assert_called_once_with(
-        "http://localhost:8000/containers/create", json={"image": "python:3.12-alpine"}
+        "http://localhost:8000/containers/create",
+        json={"image": "python:3.12-alpine", "code": "print('test')"},
     )
     assert result == "container-456"
 

@@ -36,9 +36,9 @@ def test_execute_request_model():
 
 def test_execute_request_custom_values():
     """Test ExecuteRequest with custom values."""
-    req = ExecuteRequest(code="x = 1", image="python:3.11-alpine", timeout=60)
+    req = ExecuteRequest(code="x = 1", image="python:3.12-alpine", timeout=60)
     assert req.code == "x = 1"
-    assert req.image == "python:3.11-alpine"
+    assert req.image == "python:3.12-alpine"
     assert req.timeout == 60
 
 
@@ -70,7 +70,7 @@ def test_create_execution_custom_params(client, mock_sandbox_client):
         "/api/execute",
         json={
             "code": "import time; time.sleep(1)",
-            "image": "python:3.11-alpine",
+            "image": "python:3.12-alpine",
             "timeout": 60,
         },
     )
@@ -82,7 +82,7 @@ def test_create_execution_custom_params(client, mock_sandbox_client):
     uuid.UUID(data["execution_id"])
 
     mock_sandbox_client.create_container.assert_called_once_with(
-        image="python:3.11-alpine"
+        image="python:3.12-alpine"
     )
     mock_sandbox_client.start_container.assert_called_once_with(
         container_id="custom-container-456",

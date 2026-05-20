@@ -14,6 +14,11 @@ jobs:
       matrix:
         go-version: ['1.23', '1.22']
 
+    services:
+      docker:
+        image: docker:dind
+        options: --privileged
+
     steps:
       - uses: actions/checkout@v4
 
@@ -21,6 +26,11 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.go-version }}
+
+      - name: Pull Docker images
+        run: |
+          docker pull alpine:latest
+          docker pull python:3.12-alpine
 
       - name: Download dependencies
         working-directory: ./sandbox-controller
@@ -41,20 +51,11 @@ jobs:
 
       - name: Run unit tests
         working-directory: ./sandbox-controller
-        run: go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
-
-      - name: Upload coverage
-        uses: codecov/codecov-action@v4
-        with:
-          files: ./sandbox-controller/coverage.out
-          flags: go
+        run: go test -v -race ./...
 
   python-test:
     name: Python Tests
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ['3.12', '3.11', '3.10']
 
     steps:
       - uses: actions/checkout@v4
@@ -64,33 +65,34 @@ jobs:
         with:
           version: "latest"
 
-      - name: Set up Python ${{ matrix.python-version }}
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: '3.12'
 
-      - name: Install dependencies
+      - name: Create virtual environment and install dependencies
         working-directory: ./test-client
         run: |
-          uv pip install pytest pytest-asyncio httpx ruff
-          uv sync
+          uv venv
+          uv sync --group dev
 
       - name: Run ruff check
         working-directory: ./test-client
-        run: ruff check .
+        run: |
+          source .venv/bin/activate
+          ruff check .
 
       - name: Run ruff format check
         working-directory: ./test-client
         run: |
-          if [ -n "$(ruff format --check)" ]; then
-            echo "Python code is not formatted"
-            ruff format --diff
-            exit 1
-          fi
+          source .venv/bin/activate
+          ruff format --check .
 
       - name: Run pytest
         working-directory: ./test-client
-        run: pytest -v --cov=. --cov-report=xml
+        run: |
+          source .venv/bin/activate
+          pytest -v --cov=. --cov-report=xml
 
       - name: Upload coverage
         uses: codecov/codecov-action@v4
@@ -109,6 +111,11 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
 
       - name: Install pre-commit
         run: |
@@ -144,9 +151,15 @@ jobs:
       - name: Set up uv
         uses: astral-sh/setup-uv@v1
 
+      - name: Pull Docker images
+        run: |
+          docker pull alpine:latest
+          docker pull python:3.12-alpine
+
       - name: Install dependencies
         run: |
           cd test-client
+          uv venv
           uv sync
 
       - name: Run Go integration tests

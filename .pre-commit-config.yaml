@@ -9,21 +9,21 @@ repos:
     hooks:
       - id: gofmt
         name: gofmt
-        entry: gofmt -w -l
+        entry: bash -c 'cd sandbox-controller && gofmt -w -l .'  # shell: true equivalent
         language: system
-        files: \.go$
-        pass_filenames: true
+        files: ^sandbox-controller/.*\.go$
+        pass_filenames: false
 
       - id: go-vet
         name: go vet
-        entry: go vet ./...
+        entry: bash -c 'cd sandbox-controller && go vet ./...'
         language: system
-        files: \.go$
+        files: ^sandbox-controller/.*\.go$
         pass_filenames: false
 
   # Python formatting and linting (ruff)
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: 0710b94280408eef12748cde4782972942370ad2  # v0.8.0
+    rev: v0.9.1
     hooks:
       - id: ruff
         args: [--fix]

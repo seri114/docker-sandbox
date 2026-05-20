@@ -154,5 +154,6 @@ async def cancel_execution(request: CancelRequest):
     return {"status": "cancelled", "execution_id": execution_id}
 
 
-# Mount static files
-app.mount("/static", StaticFiles(directory="static"), name="static")
+# Mount static files (if directory exists)
+if os.path.isdir("static"):
+    app.mount("/static", StaticFiles(directory="static"), name="static")

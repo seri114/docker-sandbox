@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/rs/cors"
 	"github.com/seri114/docker-sandbox/config"
 	"github.com/seri114/docker-sandbox/internal/docker"
 	"github.com/seri114/docker-sandbox/internal/handler"
@@ -255,8 +256,18 @@ func main() {
 
 	server := NewServer(dockerClient)
 
+	// Setup CORS
+	c := cors.New(cors.Options{
+		AllowedOrigins:   []string{"*"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Content-Type", "Authorization"},
+		AllowCredentials: false,
+	})
+
+	handler := c.Handler(server.router)
+
 	log.Println("Starting sandbox controller on :8080")
-	if err := http.ListenAndServe(":8080", server.router); err != nil {
+	if err := http.ListenAndServe(":8080", handler); err != nil {
 		log.Fatalf("Server failed: %s", err)
 	}
 }

@@ -133,6 +133,39 @@ cd sandbox-controller
 gofmt -w .
 ```
 
+### Forkして開発する場合
+
+このプロジェクトをforkして開発する場合、Goモジュールパスの問題に対応する必要があります。
+
+**問題**: ソースコードでは `github.com/seri114/docker-sandbox` というハードコードされたモジュールパスを使用しているため、forkユーザーはそのままではビルドできません。
+
+**解決策**: `go.mod` に `replace` ディレクティブを追加してください。
+
+```go
+// sandbox-controller/go.mod
+module github.com/seri114/docker-sandbox
+
+// ... 既存のrequireセクション ...
+
+// Forkユーザーは以下を追加
+replace github.com/seri114/docker-sandbox => github.com/YOUR-USERNAME/docker-sandbox v0.0.0
+```
+
+その後、依存関係を更新してください：
+
+```bash
+cd sandbox-controller
+go mod tidy
+go mod download
+```
+
+**メリット**:
+- ✅ ソースコードのimport文を変更不要
+- ✅ 元のリポジトリにPRを作成しやすい（コードのmerge conflictなし）
+- ✅ fork間の切り替えが容易
+
+**注意**: プルリクエストを作成する際は、`replace` ディレクティブを一時的にコメントアウトするか、削除してください。
+
 ## 既知の問題
 
 ### Docker Desktop for Mac

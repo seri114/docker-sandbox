@@ -10,11 +10,9 @@ jobs:
   go-test:
     name: Go Tests
     runs-on: ubuntu-latest
-    env:
-      GOTOOLCHAIN: auto
     strategy:
       matrix:
-        go-version: ['1.23', '1.22']
+        go-version: ['1.26']
 
     services:
       docker:
@@ -79,8 +77,6 @@ jobs:
     name: Integration Tests
     runs-on: ubuntu-latest
     needs: [go-test]
-    env:
-      GOTOOLCHAIN: auto
 
     services:
       docker:

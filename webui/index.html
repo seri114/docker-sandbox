@@ -16,16 +16,16 @@
         <main>
             <div class="code-section">
                 <label for="code">Python Code</label>
-                <textarea id="code" placeholder="print('Hello, World!')"># Enter your Python code here
-print('Hello, World!')
+                <textarea id="code" placeholder="print('Hello, World!')">import time
 
-# Example: Calculate factorial
-def factorial(n):
-    if n <= 1:
-        return 1
-    return n * factorial(n - 1)
+print("=== Fibonacci Sequence ===")
+a, b = 0, 1
+for i in range(10):
+    print(f"  #{i+1:2d}: {a}")
+    a, b = b, a + b
+    time.sleep(0.3)
 
-print(f'5! = {factorial(5)}')</textarea>
+print("\nDone!")</textarea>
             </div>
 
             <div class="controls">

@@ -1,2 +1,5 @@
 # Claude Code worktrees
 .claude/worktrees/
+
+# Antigravity CLI
+.antigravitycli/

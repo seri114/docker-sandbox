@@ -64,18 +64,45 @@ class SandboxClient:
         )
         return response.json()
 
-    def stream_logs(self, container_id: str):
+    def stream_logs(self, container_id: str, timeout: float = 30.0):
         """Stream logs from a container.
 
         Args:
             container_id: The ID of the container to get logs from
+            timeout: Request timeout in seconds
 
         Returns:
-            Streaming response object
+            Streaming response object usable as context manager
         """
         return self.client.stream(
-            "GET", f"{self.base_url}/containers/logs", params={"id": container_id}
+            "GET",
+            f"{self.base_url}/containers/logs",
+            params={"id": container_id},
+            timeout=timeout,
         )
+
+    def read_stream_lines(self, container_id: str, timeout: float = 30.0):
+        """Read streaming logs line by line.
+
+        Args:
+            container_id: The ID of the container to get logs from
+            timeout: Request timeout in seconds
+
+        Yields:
+            Log lines as strings
+
+        Raises:
+            httpx.HTTPStatusError: If the server returns an error status code
+        """
+        with self.stream_logs(container_id, timeout) as response:
+            if response.status_code != 200:
+                raise httpx.HTTPStatusError(
+                    f"Failed to stream logs: HTTP {response.status_code}",
+                    request=response.request,
+                    response=response,
+                )
+            for line in response.iter_lines():
+                yield line
 
     def close(self):
         """Close the HTTP client."""
@@ -105,17 +132,54 @@ class AsyncSandboxClient:
             data = response.json()
             return data["container_id"]
 
-    async def stream_logs(self, container_id: str):
-        """Stream logs from a container."""
-        client = httpx.AsyncClient(timeout=30.0)
+    async def stream_logs(self, container_id: str, timeout: float = 30.0):
+        """Stream logs from a container.
+
+        Args:
+            container_id: The ID of the container to get logs from
+            timeout: Request timeout in seconds
+
+        Returns:
+            Tuple of (response, client) for use with async context manager
+        """
+        client = httpx.AsyncClient(timeout=timeout)
         try:
             response = await client.stream(
-                "GET", f"{self.base_url}/containers/logs", params={"id": container_id}
+                "GET",
+                f"{self.base_url}/containers/logs",
+                params={"id": container_id},
+                timeout=timeout,
             )
             return response, client
-        except:
+        except Exception:
             await client.aclose()
             raise
+
+    async def read_stream_lines(self, container_id: str, timeout: float = 30.0):
+        """Read streaming logs line by line asynchronously.
+
+        Args:
+            container_id: The ID of the container to get logs from
+            timeout: Request timeout in seconds
+
+        Yields:
+            Log lines as strings
+
+        Raises:
+            httpx.HTTPStatusError: If the server returns an error status code
+        """
+        response, client = await self.stream_logs(container_id, timeout)
+        try:
+            if response.status_code != 200:
+                raise httpx.HTTPStatusError(
+                    f"Failed to stream logs: HTTP {response.status_code}",
+                    request=response.request,
+                    response=response,
+                )
+            async for line in response.aiter_lines():
+                yield line
+        finally:
+            await client.aclose()
 
     async def aclose(self):
         """Close resources (no-op for this stateless client)."""

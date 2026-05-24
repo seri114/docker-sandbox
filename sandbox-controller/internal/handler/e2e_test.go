@@ -75,7 +75,7 @@ for i in range(3):
 
 	// Step 1: Create container
 	createReq := CreateContainerRequest{
-		Image:  "python:3.12-alpine",
+		Image:  "python:3.14-alpine",
 		Code:   code,
 		Memory: 128 * 1024 * 1024,
 		CPU:    0.5,
@@ -245,7 +245,7 @@ for i in range(3):
     time.sleep(0.5)`
 
 	createReq := CreateContainerRequest{
-		Image:  "python:3.12-alpine",
+		Image:  "python:3.14-alpine",
 		Code:   code,
 		Memory: 128 * 1024 * 1024,
 		CPU:    0.5,
@@ -509,7 +509,7 @@ print("Done")`
 
 	// Create and start container
 	createReq := CreateContainerRequest{
-		Image:  "python:3.12-alpine",
+		Image:  "python:3.14-alpine",
 		Code:   code,
 		Memory: 128 * 1024 * 1024,
 		CPU:    0.5,

@@ -30,7 +30,7 @@ jobs:
       - name: Pull Docker images
         run: |
           docker pull alpine:latest
-          docker pull python:3.12-alpine
+          docker pull python:3.14-alpine
 
       - name: Download dependencies
         working-directory: ./sandbox-controller
@@ -94,7 +94,7 @@ jobs:
       - name: Pull Docker images
         run: |
           docker pull alpine:latest
-          docker pull python:3.12-alpine
+          docker pull python:3.14-alpine
 
       - name: Run Go integration tests
         working-directory: ./sandbox-controller

@@ -95,7 +95,7 @@ CORS_ORIGINS=https://example.com,https://www.example.com
 curl -X POST http://localhost:18080/containers/create \
   -H "Content-Type: application/json" \
   -d '{
-    "image": "python:3.12-alpine",
+    "image": "python:3.14-alpine",
     "code": "print(\"Hello\")",
     "memory": 134217768,
     "cpu": 0.5

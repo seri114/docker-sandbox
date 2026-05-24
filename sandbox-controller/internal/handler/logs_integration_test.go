@@ -163,7 +163,7 @@ func TestLogsStreamerLargeOutput(t *testing.T) {
 	}
 
 	containerConfig := &container.Config{
-		Image:        "python:3.12-alpine",
+		Image:        "python:3.14-alpine",
 		Cmd:          []string{"python", "-c", "print('A' * 5000)"},
 		AttachStdout: true,
 		AttachStderr: true,

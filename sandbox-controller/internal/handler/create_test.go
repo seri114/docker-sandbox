@@ -2,15 +2,12 @@ package handler
 
 import (
 	"testing"
+
+	"github.com/seri114/docker-sandbox/internal/constants"
 )
 
 func TestCreateContainerRequest(t *testing.T) {
-	req := &CreateContainerRequest{
-		Image:  "python:3.14-alpine",
-		Code:   "print('hello')",
-		Memory: 128 * 1024 * 1024, // 128MB
-		CPU:    0.5,
-	}
+	req := GetDefaultTestConfig()
 
 	// Test ToContainerConfig
 	config := req.ToContainerConfig()
@@ -18,8 +15,8 @@ func TestCreateContainerRequest(t *testing.T) {
 		t.Fatal("expected non-nil config")
 	}
 
-	if config.Image != "python:3.14-alpine" {
-		t.Errorf("expected image 'python:3.14-alpine', got '%s'", config.Image)
+	if config.Image != constants.DefaultPythonImage {
+		t.Errorf("expected image '%s', got '%s'", constants.DefaultPythonImage, config.Image)
 	}
 
 	expectedCmd := []string{"python", "-u", "-c", "print('hello')"}
@@ -85,12 +82,7 @@ func TestCreateContainerRequest(t *testing.T) {
 }
 
 func TestCreateContainerRequestValidate(t *testing.T) {
-	validRequest := &CreateContainerRequest{
-		Image:  "python:3.14-alpine",
-		Code:   "print('hello')",
-		Memory: 128 * 1024 * 1024,
-		CPU:    0.5,
-	}
+	validRequest := GetDefaultTestConfig()
 	if err := validRequest.Validate(); err != nil {
 		t.Errorf("valid request should not return error, got: %v", err)
 	}
@@ -104,22 +96,14 @@ func TestCreateContainerRequestValidate(t *testing.T) {
 		t.Error("empty image should return error")
 	}
 
-	emptyCode := &CreateContainerRequest{
-		Image:  "python:3.14-alpine",
-		Code:   "",
-		Memory: 128 * 1024 * 1024,
-		CPU:    0.5,
-	}
+	emptyCode := GetDefaultTestConfig()
+	emptyCode.Code = ""
 	if err := emptyCode.Validate(); err == nil {
 		t.Error("empty code should return error")
 	}
 
-	tooLargeCode := &CreateContainerRequest{
-		Image:  "python:3.14-alpine",
-		Code:   string(make([]byte, maxCodeSize+1)),
-		Memory: 128 * 1024 * 1024,
-		CPU:    0.5,
-	}
+	tooLargeCode := GetDefaultTestConfig()
+	tooLargeCode.Code = string(make([]byte, maxCodeSize+1))
 	if err := tooLargeCode.Validate(); err == nil {
 		t.Error("code exceeding max size should return error")
 	}
@@ -134,22 +118,14 @@ func TestCreateContainerRequestValidate(t *testing.T) {
 		t.Error("zero memory should return error")
 	}
 
-	invalidCPU := &CreateContainerRequest{
-		Image:  "python:3.14-alpine",
-		Code:   "print('hello')",
-		Memory: 128 * 1024 * 1024,
-		CPU:    1.5,
-	}
+	invalidCPU := GetDefaultTestConfig()
+	invalidCPU.CPU = 1.5
 	if err := invalidCPU.Validate(); err == nil {
 		t.Error("CPU > 1 should return error")
 	}
 
-	zeroCPU := &CreateContainerRequest{
-		Image:  "python:3.14-alpine",
-		Code:   "print('hello')",
-		Memory: 128 * 1024 * 1024,
-		CPU:    0,
-	}
+	zeroCPU := GetDefaultTestConfig()
+	zeroCPU.CPU = 0
 	if err := zeroCPU.Validate(); err == nil {
 		t.Error("CPU <= 0 should return error")
 	}

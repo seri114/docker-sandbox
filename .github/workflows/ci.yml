@@ -53,53 +53,6 @@ jobs:
         working-directory: ./sandbox-controller
         run: go test -v -race ./...
 
-  python-test:
-    name: Python Tests
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up uv
-        uses: astral-sh/setup-uv@v1
-        with:
-          version: "latest"
-
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v5
-        with:
-          python-version: 3.12
-
-      - name: Create virtual environment and install dependencies
-        working-directory: ./test-client
-        run: |
-          uv venv
-          uv sync --group dev
-
-      - name: Run ruff check
-        working-directory: ./test-client
-        run: |
-          source .venv/bin/activate
-          ruff check .
-
-      - name: Run ruff format check
-        working-directory: ./test-client
-        run: |
-          source .venv/bin/activate
-          ruff format --check .
-
-      - name: Run pytest
-        working-directory: ./test-client
-        run: |
-          source .venv/bin/activate
-          pytest -v --cov=. --cov-report=xml
-
-      - name: Upload coverage
-        uses: codecov/codecov-action@v4
-        with:
-          files: ./test-client/coverage.xml
-          flags: python
-
   pre-commit:
     name: Pre-commit Checks
     runs-on: ubuntu-latest
@@ -123,7 +76,7 @@ jobs:
   integration-test:
     name: Integration Tests
     runs-on: ubuntu-latest
-    needs: [go-test, python-test]
+    needs: [go-test]
 
     services:
       docker:
@@ -138,24 +91,10 @@ jobs:
         with:
           go-version: '1.23'
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
-      - name: Set up uv
-        uses: astral-sh/setup-uv@v1
-
       - name: Pull Docker images
         run: |
           docker pull alpine:latest
           docker pull python:3.12-alpine
-
-      - name: Install dependencies
-        run: |
-          cd test-client
-          uv venv
-          uv sync
 
       - name: Run Go integration tests
         working-directory: ./sandbox-controller

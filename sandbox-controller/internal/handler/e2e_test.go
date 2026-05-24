@@ -74,12 +74,8 @@ for i in range(3):
     print(f"Count: {i}")`
 
 	// Step 1: Create container
-	createReq := CreateContainerRequest{
-		Image:  "python:3.14-alpine",
-		Code:   code,
-		Memory: 128 * 1024 * 1024,
-		CPU:    0.5,
-	}
+	createReq := GetDefaultTestConfig()
+	createReq.Code = code
 	createBody, _ := json.Marshal(createReq)
 
 	resp, err := http.Post(server.URL+"/containers/create", "application/json", bytes.NewReader(createBody))
@@ -244,12 +240,8 @@ for i in range(3):
     print(f"Line {i}")
     time.sleep(0.5)`
 
-	createReq := CreateContainerRequest{
-		Image:  "python:3.14-alpine",
-		Code:   code,
-		Memory: 128 * 1024 * 1024,
-		CPU:    0.5,
-	}
+	createReq := GetDefaultTestConfig()
+	createReq.Code = code
 	createBody, _ := json.Marshal(createReq)
 
 	resp, err := http.Post(server.URL+"/containers/create", "application/json", bytes.NewReader(createBody))
@@ -508,12 +500,8 @@ for i in range(10):
 print("Done")`
 
 	// Create and start container
-	createReq := CreateContainerRequest{
-		Image:  "python:3.14-alpine",
-		Code:   code,
-		Memory: 128 * 1024 * 1024,
-		CPU:    0.5,
-	}
+	createReq := GetDefaultTestConfig()
+	createReq.Code = code
 	createBody, _ := json.Marshal(createReq)
 
 	resp, err := http.Post(server.URL+"/containers/create", "application/json", bytes.NewReader(createBody))

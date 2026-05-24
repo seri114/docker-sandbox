@@ -1,7 +1,7 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:base"
+    "config:best-practices"
   ],
   "enabledManagers": [
     "gomod",
@@ -18,9 +18,8 @@
       "matchManagers": ["pre-commit"],
       "automerge": true,
       "automergeType": "pr",
-      "platformAutomerge": true,
+      "platformAutomerge": false,
       "addLabels": ["pre-commit", "dependencies"],
-      "pinDigests": true,
       "commitMessageAction": "Update",
       "commitMessageTopic": "{{depName}} {{newValue}}",
       "semanticCommitType": "chore"
@@ -30,16 +29,15 @@
       "matchManagers": ["github-actions"],
       "automerge": true,
       "automergeType": "pr",
-      "platformAutomerge": true,
-      "addLabels": ["github-actions", "dependencies"],
-      "pinDigests": true
+      "platformAutomerge": false,
+      "addLabels": ["github-actions", "dependencies"]
     },
     {
       "description": "Python dependencies via uv/pep621",
       "matchManagers": ["pep621", "uv"],
       "automerge": true,
       "automergeType": "pr",
-      "platformAutomerge": true,
+      "platformAutomerge": false,
       "addLabels": ["python", "dependencies"],
       "groupName": "Python dependencies"
     },
@@ -48,7 +46,7 @@
       "matchManagers": ["gomod"],
       "automerge": true,
       "automergeType": "pr",
-      "platformAutomerge": true,
+      "platformAutomerge": false,
       "addLabels": ["go", "dependencies"],
       "groupName": "Go dependencies"
     },
@@ -57,7 +55,7 @@
       "matchManagers": ["docker-compose"],
       "automerge": true,
       "automergeType": "pr",
-      "platformAutomerge": true,
+      "platformAutomerge": false,
       "addLabels": ["docker", "dependencies"],
       "groupName": "Docker Compose images"
     },
@@ -66,10 +64,9 @@
       "matchManagers": ["dockerfile"],
       "automerge": true,
       "automergeType": "pr",
-      "platformAutomerge": true,
+      "platformAutomerge": false,
       "addLabels": ["docker", "dependencies"],
-      "groupName": "Docker base images",
-      "pinDigests": true
+      "groupName": "Docker base images"
     }
   ],
   "labels": ["dependencies"],
@@ -80,7 +77,6 @@
   "prCreation": "immediate",
   "minimumReleaseAge": "7 days",
   "rebaseWhen": "conflicted",
-  "assignAutomerge": true,
   "updateNotScheduled": false,
   "separateMajorMinor": true,
   "commitMessagePrefix": "deps:",

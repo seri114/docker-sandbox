@@ -23,16 +23,16 @@ Dockerコンテナ内でPythonコードを安全に実行するPOCシステム
 ## アーキテクチャ
 
 ```
-┌─────────┐     ┌──────────────────┐     ┌─────────────┐
-│  WebUI  │────▶│ Test Client      │────▶│ Controller  │
-└─────────┘     │ (FastAPI)        │     │ (Go)        │
-                └──────────────────┘     └──────┬──────┘
-                                                 │
-                                                 ▼
-                                          ┌──────────┐
-                                          │  Docker  │
-                                          │  Socket  │
-                                          └──────────┘
+┌─────────┐     ┌─────────────┐
+│  WebUI  │────▶│ Controller  │
+└─────────┘     │ (Go)        │
+                └──────┬──────┘
+                       │
+                       ▼
+                ┌──────────┐
+                │  Docker  │
+                │  Socket  │
+                └──────────┘
 ```
 
 ## 起動
@@ -46,9 +46,47 @@ docker compose up --build
 
 ## アクセス
 
-- **Web UI**: http://localhost
+- **Web UI**: http://localhost:8080
 - **Controller API**: http://localhost:18080
-- **Test Client**: http://localhost:8000
+
+## ポート設定
+
+ポート番号は `.env` ファイルでカスタマイズ可能です。
+
+```bash
+# デフォルト設定
+cp .env.example .env
+docker compose up
+
+# ポートを変更する場合
+# .envファイルを編集
+WEB_UI_PORT=9090
+SANDBOX_CONTROLLER_PORT=19080
+```
+
+## CORS設定
+
+セキュリティのため、デフォルトではlocalhostからのアクセスのみ許可されています。
+
+### デフォルト設定（ローカル開発）
+
+```
+http://localhost:8080
+http://localhost:18080
+http://127.0.0.1:8080
+http://127.0.0.1:18080
+```
+
+### 本番環境でのCORS設定
+
+本番環境では具体的なオリジンを指定してください：
+
+```bash
+# .envファイルでCORS_ORIGINSを設定
+CORS_ORIGINS=https://example.com,https://www.example.com
+```
+
+**⚠️ セキュリティ注意**: ワイルドカード（`*`）は使用せず、必ず具体的なオリジンを指定してください。
 
 ## API エンドポイント
 
@@ -109,23 +147,6 @@ git commit --no-verify
 - Python: `ruff` (フォーマット + リント)
 - 全体: 末尾空白、ファイル末尾改行、大ファイル警告
 
-### Python (test-client)
-- **uv**: 高速なパッケージマネージャー
-- **ruff**: 高速なPython linter/formatter
-
-```bash
-cd test-client
-
-# 依存関係インストール
-uv sync
-
-# Lintチェック
-ruff check .
-
-# コードフォーマット
-ruff format .
-```
-
 ### Go (sandbox-controller)
 - **gofmt**: 標準のフォーマッタ
 
@@ -135,6 +156,39 @@ cd sandbox-controller
 # フォーマット
 gofmt -w .
 ```
+
+### Forkして開発する場合
+
+このプロジェクトをforkして開発する場合、Goモジュールパスの問題に対応する必要があります。
+
+**問題**: ソースコードでは `github.com/seri114/docker-sandbox` というハードコードされたモジュールパスを使用しているため、forkユーザーはそのままではビルドできません。
+
+**解決策**: `go.mod` に `replace` ディレクティブを追加してください。
+
+```go
+// sandbox-controller/go.mod
+module github.com/seri114/docker-sandbox
+
+// ... 既存のrequireセクション ...
+
+// Forkユーザーは以下を追加
+replace github.com/seri114/docker-sandbox => github.com/YOUR-USERNAME/docker-sandbox v0.0.0
+```
+
+その後、依存関係を更新してください：
+
+```bash
+cd sandbox-controller
+go mod tidy
+go mod download
+```
+
+**メリット**:
+- ✅ ソースコードのimport文を変更不要
+- ✅ 元のリポジトリにPRを作成しやすい（コードのmerge conflictなし）
+- ✅ fork間の切り替えが容易
+
+**注意**: プルリクエストを作成する際は、`replace` ディレクティブを一時的にコメントアウトするか、削除してください。
 
 ## 既知の問題
 
@@ -157,20 +211,6 @@ go test -v ./... -run Integration
 
 # E2Eテスト（Dockerが必要）
 go test -v ./... -run E2E
-```
-
-### Pythonテスト（test-client）
-
-```bash
-# pytestが必要
-uv pip install pytest pytest-asyncio httpx
-
-# 単体テスト
-cd test-client
-pytest
-
-# E2Eテスト（controllerが必要）
-pytest tests/test_e2e.py -v
 ```
 
 ### テストカバレッジ

@@ -27,20 +27,20 @@ repos:
     hooks:
       - id: ruff
         args: [--fix]
-        files: ^(test-client|webui)/.*\.py$
+        files: ^webui/.*\.py$
 
       - id: ruff-format
-        files: ^(test-client|webui)/.*\.py$
+        files: ^webui/.*\.py$
 
   # General file checks
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: cef0300fd0fc4d2a87a85fa2093c6b283ea36f4b  # v5.0.0
     hooks:
       - id: trailing-whitespace
-        exclude: ^(test-client/webui)/.*\.(min\.)?(js|css)$
+        exclude: ^webui/.*\.(min\.)?(js|css)$
 
       - id: end-of-file-fixer
-        exclude: ^(test-client/webui)/.*\.(min\.)?(js|css)$
+        exclude: ^webui/.*\.(min\.)?(js|css)$
 
       - id: check-yaml
         files: \.ya?ml$

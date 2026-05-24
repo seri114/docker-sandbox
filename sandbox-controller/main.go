@@ -7,9 +7,11 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/rs/cors"
 	"github.com/seri114/docker-sandbox/config"
 	"github.com/seri114/docker-sandbox/internal/docker"
 	"github.com/seri114/docker-sandbox/internal/handler"
@@ -255,8 +257,32 @@ func main() {
 
 	server := NewServer(dockerClient)
 
+	// Setup CORS with environment variable support
+	allowedOrigins := os.Getenv("CORS_ORIGINS")
+	var origins []string
+	if allowedOrigins != "" {
+		origins = strings.Split(allowedOrigins, ",")
+	} else {
+		// Default to localhost only for security
+		origins = []string{
+			"http://localhost:8080",
+			"http://localhost:18080",
+			"http://127.0.0.1:8080",
+			"http://127.0.0.1:18080",
+		}
+	}
+
+	c := cors.New(cors.Options{
+		AllowedOrigins:   origins,
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Content-Type", "Authorization"},
+		AllowCredentials: false,
+	})
+
+	handler := c.Handler(server.router)
+
 	log.Println("Starting sandbox controller on :8080")
-	if err := http.ListenAndServe(":8080", server.router); err != nil {
+	if err := http.ListenAndServe(":8080", handler); err != nil {
 		log.Fatalf("Server failed: %s", err)
 	}
 }

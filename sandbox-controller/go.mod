@@ -5,6 +5,7 @@ go 1.25.0
 require (
 	github.com/docker/docker v28.5.2+incompatible
 	github.com/gorilla/mux v1.8.1
+	github.com/rs/cors v1.11.1
 )
 
 require (

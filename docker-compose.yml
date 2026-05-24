@@ -15,6 +15,8 @@ services:
       dockerfile: Dockerfile
     ports:
       - "${SANDBOX_CONTROLLER_PORT:-18080}:8080"
+    environment:
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:8080,http://localhost:18080,http://127.0.0.1:8080,http://127.0.0.1:18080}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:

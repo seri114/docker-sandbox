@@ -42,7 +42,10 @@ async def async_stream_logs_with_polling(container_id: str, interval: float = 0.
                                 except json.JSONDecodeError:
                                     continue
                 finally:
-                    await http_client.aclose()
+                    try:
+                        await http_client.aclose()
+                    except Exception:
+                        pass  # Don't mask the original exception
 
                 # No more data for now, wait before next poll
                 await asyncio.sleep(interval)
@@ -177,7 +180,10 @@ async def async_example_multiple_containers():
                         except json.JSONDecodeError:
                             continue
             finally:
-                await http_client.aclose()
+                try:
+                    await http_client.aclose()
+                except Exception:
+                    pass  # Don't mask the original exception
                 print(f"[Container {idx}] Monitor ended")
 
         # Start all monitoring tasks

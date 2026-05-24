@@ -28,3 +28,6 @@ ignore = []
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+
+[project.scripts]
+dev = "uvicorn app.api:app --reload --host 0.0.0.0 --port 8000"

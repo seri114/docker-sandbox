@@ -90,11 +90,19 @@ class SandboxClient:
 
         Yields:
             Log lines as strings
+
+        Raises:
+            httpx.HTTPStatusError: If the server returns an error status code
         """
         with self.stream_logs(container_id, timeout) as response:
-            if response.status_code == 200:
-                for line in response.iter_lines():
-                    yield line
+            if response.status_code != 200:
+                raise httpx.HTTPStatusError(
+                    f"Failed to stream logs: HTTP {response.status_code}",
+                    request=response.request,
+                    response=response,
+                )
+            for line in response.iter_lines():
+                yield line
 
     def close(self):
         """Close the HTTP client."""
@@ -143,7 +151,7 @@ class AsyncSandboxClient:
                 timeout=timeout,
             )
             return response, client
-        except:
+        except Exception:
             await client.aclose()
             raise
 
@@ -156,12 +164,20 @@ class AsyncSandboxClient:
 
         Yields:
             Log lines as strings
+
+        Raises:
+            httpx.HTTPStatusError: If the server returns an error status code
         """
         response, client = await self.stream_logs(container_id, timeout)
         try:
-            if response.status_code == 200:
-                async for line in response.aiter_lines():
-                    yield line
+            if response.status_code != 200:
+                raise httpx.HTTPStatusError(
+                    f"Failed to stream logs: HTTP {response.status_code}",
+                    request=response.request,
+                    response=response,
+                )
+            async for line in response.aiter_lines():
+                yield line
         finally:
             await client.aclose()
 

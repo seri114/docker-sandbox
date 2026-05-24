@@ -6,12 +6,14 @@
   "enabledManagers": [
     "gomod",
     "pep621",
-    "uv",
     "pre-commit",
     "docker-compose",
     "dockerfile",
     "github-actions"
   ],
+  "pre-commit": {
+    "enabled": true
+  },
   "packageRules": [
     {
       "description": "Pre-commit hooks auto-update with SHA version tags",

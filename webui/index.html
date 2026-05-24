@@ -16,16 +16,45 @@
         <main>
             <div class="code-section">
                 <label for="code">Python Code</label>
-                <textarea id="code" placeholder="print('Hello, World!')"># Enter your Python code here
-print('Hello, World!')
+                <textarea id="code" placeholder="print('Hello, World!')">import time
 
-# Example: Calculate factorial
-def factorial(n):
-    if n <= 1:
-        return 1
-    return n * factorial(n - 1)
+# ── 1. Fibonacci ──────────────────────────
+print("=== Fibonacci Sequence ===")
+a, b = 0, 1
+for i in range(12):
+    print(f"  #{i+1:2d}: {a}")
+    a, b = b, a + b
+    time.sleep(0.25)
 
-print(f'5! = {factorial(5)}')</textarea>
+# ── 2. Prime Numbers ──────────────────────
+print("\n=== Prime Number Search ===")
+def is_prime(n):
+    if n < 2: return False
+    for i in range(2, int(n**0.5) + 1):
+        if n % i == 0: return False
+    return True
+
+count, n = 0, 2
+while count < 10:
+    if is_prime(n):
+        print(f"  Prime #{count+1:2d}: {n}")
+        count += 1
+        time.sleep(0.2)
+    n += 1
+
+# ── 3. Progress Bar ───────────────────────
+print("\n=== Loading... ===")
+for i in range(1, 21):
+    bar = "█" * i + "░" * (20 - i)
+    print(f"  [{bar}] {i*5:3d}%")
+    time.sleep(0.15)
+
+# ── 4. Countdown ──────────────────────────
+print("\n=== Countdown ===")
+for i in range(5, 0, -1):
+    print(f"  T-{i}...")
+    time.sleep(1)
+print("  🚀 All done!")</textarea>
             </div>
 
             <div class="controls">

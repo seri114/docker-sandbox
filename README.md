@@ -23,16 +23,16 @@ Dockerコンテナ内でPythonコードを安全に実行するPOCシステム
 ## アーキテクチャ
 
 ```
-┌─────────┐     ┌──────────────────┐     ┌─────────────┐
-│  WebUI  │────▶│ Test Client      │────▶│ Controller  │
-└─────────┘     │ (FastAPI)        │     │ (Go)        │
-                └──────────────────┘     └──────┬──────┘
-                                                 │
-                                                 ▼
-                                          ┌──────────┐
-                                          │  Docker  │
-                                          │  Socket  │
-                                          └──────────┘
+┌─────────┐     ┌─────────────┐
+│  WebUI  │────▶│ Controller  │
+└─────────┘     │ (Go)        │
+                └──────┬──────┘
+                       │
+                       ▼
+                ┌──────────┐
+                │  Docker  │
+                │  Socket  │
+                └──────────┘
 ```
 
 ## 起動
@@ -46,9 +46,23 @@ docker compose up --build
 
 ## アクセス
 
-- **Web UI**: http://localhost
+- **Web UI**: http://localhost:8080
 - **Controller API**: http://localhost:18080
-- **Test Client**: http://localhost:8000
+
+## ポート設定
+
+ポート番号は `.env` ファイルでカスタマイズ可能です。
+
+```bash
+# デフォルト設定
+cp .env.example .env
+docker compose up
+
+# ポートを変更する場合
+# .envファイルを編集
+WEB_UI_PORT=9090
+SANDBOX_CONTROLLER_PORT=19080
+```
 
 ## API エンドポイント
 
@@ -109,23 +123,6 @@ git commit --no-verify
 - Python: `ruff` (フォーマット + リント)
 - 全体: 末尾空白、ファイル末尾改行、大ファイル警告
 
-### Python (test-client)
-- **uv**: 高速なパッケージマネージャー
-- **ruff**: 高速なPython linter/formatter
-
-```bash
-cd test-client
-
-# 依存関係インストール
-uv sync
-
-# Lintチェック
-ruff check .
-
-# コードフォーマット
-ruff format .
-```
-
 ### Go (sandbox-controller)
 - **gofmt**: 標準のフォーマッタ
 
@@ -157,20 +154,6 @@ go test -v ./... -run Integration
 
 # E2Eテスト（Dockerが必要）
 go test -v ./... -run E2E
-```
-
-### Pythonテスト（test-client）
-
-```bash
-# pytestが必要
-uv pip install pytest pytest-asyncio httpx
-
-# 単体テスト
-cd test-client
-pytest
-
-# E2Eテスト（controllerが必要）
-pytest tests/test_e2e.py -v
 ```
 
 ### テストカバレッジ

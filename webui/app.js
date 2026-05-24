@@ -1,7 +1,7 @@
 // Python Sandbox Web UI
 
 const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? 'http://localhost:8000'
+    ? 'http://localhost:18080'
     : '';
 
 // DOM Elements
@@ -72,12 +72,12 @@ async function stopExecution(cancelled = false) {
     // Cancel the execution on the server (only if user cancelled)
     if (cancelled && currentExecutionId) {
         try {
-            await fetch(`${API_BASE}/api/execute/cancel`, {
+            await fetch(`${API_BASE}/containers/stop`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ execution_id: currentExecutionId })
+                body: JSON.stringify({ container_id: currentExecutionId })
             });
             appendOutput('\n--- Execution cancelled ---');
         } catch (error) {
@@ -115,28 +115,45 @@ async function executeCode() {
     setRunningState(true);
 
     try {
-        // Create execution
-        const response = await fetch(`${API_BASE}/api/execute`, {
+        // Create container
+        const createResponse = await fetch(`${API_BASE}/containers/create`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
+                image: 'python:3.12-alpine',
+                code: code
+            })
+        });
+
+        if (!createResponse.ok) {
+            throw new Error(`HTTP error! status: ${createResponse.status}`);
+        }
+
+        const createData = await createResponse.json();
+        const containerId = createData.container_id;
+        currentExecutionId = containerId;
+
+        // Start container
+        const startResponse = await fetch(`${API_BASE}/containers/start`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                container_id: containerId,
                 code: code,
                 timeout: timeout
             })
         });
 
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+        if (!startResponse.ok) {
+            throw new Error(`HTTP error! status: ${startResponse.status}`);
         }
 
-        const data = await response.json();
-        const executionId = data.execution_id;
-        currentExecutionId = executionId;
-
         // Start SSE stream
-        eventSource = new EventSource(`${API_BASE}/api/execute/stream?execution_id=${executionId}`);
+        eventSource = new EventSource(`${API_BASE}/containers/logs?id=${containerId}`);
 
         eventSource.onmessage = (event) => {
             const data = event.data;

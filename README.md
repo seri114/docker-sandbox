@@ -64,6 +64,30 @@ WEB_UI_PORT=9090
 SANDBOX_CONTROLLER_PORT=19080
 ```
 
+## CORS設定
+
+セキュリティのため、デフォルトではlocalhostからのアクセスのみ許可されています。
+
+### デフォルト設定（ローカル開発）
+
+```
+http://localhost:8080
+http://localhost:18080
+http://127.0.0.1:8080
+http://127.0.0.1:18080
+```
+
+### 本番環境でのCORS設定
+
+本番環境では具体的なオリジンを指定してください：
+
+```bash
+# .envファイルでCORS_ORIGINSを設定
+CORS_ORIGINS=https://example.com,https://www.example.com
+```
+
+**⚠️ セキュリティ注意**: ワイルドカード（`*`）は使用せず、必ず具体的なオリジンを指定してください。
+
 ## API エンドポイント
 
 ### コンテナ作成

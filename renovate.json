@@ -70,6 +70,12 @@
       "platformAutomerge": false,
       "addLabels": ["docker", "dependencies"],
       "groupName": "Docker base images"
+    },
+    {
+      "description": "Docker digest updates do not need stability checks",
+      "matchDatasources": ["docker"],
+      "matchUpdateTypes": ["digest"],
+      "internalChecksFilter": null
     }
   ],
   "labels": ["dependencies"],

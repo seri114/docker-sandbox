@@ -172,7 +172,7 @@ func TestContainerLogs(t *testing.T) {
 	defer cancel()
 
 	config := &container.Config{
-		Image:        "alpine:latest",
+		Image:        constants.DefaultAlpineImage,
 		Cmd:          []string{"sh", "-c", "echo stdout && echo stderr >&2"},
 		AttachStdout: true,
 		AttachStderr: true,

@@ -16,8 +16,7 @@ RUN go mod download
 # Copy source code
 COPY . .
 
-# Build the binary (use goversion to auto-detect needed version)
-ENV GOTOOLCHAIN=go1.25.10
+# Build the binary
 RUN go mod tidy && \
     CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
     -ldflags="-w -s" \

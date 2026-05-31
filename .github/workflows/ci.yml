@@ -53,6 +53,7 @@ jobs:
           docker run --rm \
             -v /var/run/docker.sock:/var/run/docker.sock \
             -e DOCKER_HOST=unix:///var/run/docker.sock \
+            -e CGO_ENABLED=1 \
             sandbox-controller:test \
             go test -v -race ./...
 

@@ -33,6 +33,8 @@ jobs:
 
       - name: Pull Docker images
         run: |
+          docker pull alpine:latest
+          docker pull python:3.14-alpine
           docker pull alpine:3.20@sha256:d9e853e87e55526f6b2917df91a2115c36dd7c696a35be12163d44e6e2a4b6bc
           docker pull python:3.14-alpine@sha256:5a824eb82cc75361f98611f3cfc5091ea33f10a6ccea4d4ebdabbc523b9a1614
 
@@ -97,6 +99,8 @@ jobs:
 
       - name: Pull Docker images
         run: |
+          docker pull alpine:latest
+          docker pull python:3.14-alpine
           docker pull alpine:3.20@sha256:d9e853e87e55526f6b2917df91a2115c36dd7c696a35be12163d44e6e2a4b6bc
           docker pull python:3.14-alpine@sha256:5a824eb82cc75361f98611f3cfc5091ea33f10a6ccea4d4ebdabbc523b9a1614
 

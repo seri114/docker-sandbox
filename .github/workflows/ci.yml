@@ -98,10 +98,16 @@ jobs:
 
       - name: Run Go integration tests
         working-directory: ./sandbox-controller
+        env:
+          DOCKER_HOST: tcp://docker:2376
+          DOCKER_TLS_CERTDIR: ""
         run: go test -v -run Integration ./...
 
       - name: Run E2E tests
         working-directory: ./sandbox-controller
+        env:
+          DOCKER_HOST: tcp://docker:2376
+          DOCKER_TLS_CERTDIR: ""
         run: go test -v -run E2E ./...
 
   security-scan:

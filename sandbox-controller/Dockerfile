@@ -19,12 +19,12 @@ COPY . .
 # Build the binary (use goversion to auto-detect needed version)
 ENV GOTOOLCHAIN=go1.25.10
 RUN go mod tidy && \
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
-	-ldflags="-w -s" \
-	-o /build/controller .
+    CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+    -ldflags="-w -s" \
+    -o /build/controller .
 
-# Final stage - Alpine Linux runtime
-FROM alpine:3.20@sha256:d9e853e87e55526f6b2917df91a2115c36dd7c696a35be12163d44e6e2a4b6bc
+# Final stage - TEMPORARY alpine for testing
+FROM alpine:latest@sha256:5b10f432ef3da1b8d4c7eb6c487f2f5a8f096bc91145e68878dd4a5019afde11
 
 # Copy the binary from builder
 COPY --from=builder /build/controller /controller

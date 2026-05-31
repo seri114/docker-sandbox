@@ -9,7 +9,6 @@ import (
 	"github.com/docker/docker/api/types/container"
 
 	"github.com/seri114/docker-sandbox/config"
-	"github.com/seri114/docker-sandbox/internal/constants"
 )
 
 // getDockerHost returns the Docker socket path, defaulting to the standard path
@@ -86,7 +85,7 @@ func TestCreateContainer(t *testing.T) {
 	defer cancel()
 
 	config := &container.Config{
-		Image: constants.DefaultAlpineImage,
+		Image: "alpine:latest",
 		Cmd:   []string{"echo", "hello"},
 	}
 	hostConfig := &container.HostConfig{
@@ -124,7 +123,7 @@ func TestStartContainer(t *testing.T) {
 	defer cancel()
 
 	config := &container.Config{
-		Image: constants.DefaultAlpineImage,
+		Image: "alpine:latest",
 		Cmd:   []string{"echo", "hello"},
 	}
 	hostConfig := &container.HostConfig{

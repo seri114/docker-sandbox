@@ -35,7 +35,7 @@ func TestLogsStreamerIntegration(t *testing.T) {
 
 	// Create a test container that outputs both stdout and stderr
 	containerConfig := &container.Config{
-		Image:        constants.DefaultAlpineImage,
+		Image:        "alpine:latest",
 		Cmd:          []string{"sh", "-c", "echo stdout1 && echo stderr >&2 && echo stdout2"},
 		AttachStdout: true,
 		AttachStderr: true,

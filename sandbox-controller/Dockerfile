@@ -4,7 +4,7 @@ FROM golang:1.26-alpine@sha256:91eda9776261207ea25fd06b5b7fed8d397dd2c0a283e77f2
 WORKDIR /build
 
 # Install build dependencies
-RUN apk add --no-cache git ca-certificates
+RUN apk add --no-cache git ca-certificates gcc musl-dev
 
 # Allow Go toolchain auto-download for compatibility
 ENV GOTOOLCHAIN=auto
@@ -16,8 +16,7 @@ RUN go mod download
 # Copy source code
 COPY . .
 
-# Build the binary (use goversion to auto-detect needed version)
-ENV GOTOOLCHAIN=go1.25.10
+# Build the binary
 RUN go mod tidy && \
     CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
     -ldflags="-w -s" \

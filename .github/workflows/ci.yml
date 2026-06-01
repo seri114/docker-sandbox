@@ -11,74 +11,54 @@ permissions:
   security-events: write
 
 jobs:
-  go-test:
-    name: Go Tests
+  docker-test:
+    name: Docker-based Tests
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        go-version: ['1.26']
-
-    services:
-      docker:
-        image: docker:dind@sha256:6b9cd914eb9c6b342c040a49a27a5eb3804453bae6ecc90f7ff96133595a95e8
-        options: --privileged
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Set up Go
-        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
-        with:
-          go-version: ${{ matrix.go-version }}
-
-      - name: Set up Docker buildx
+      - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Cache Docker layers
-        uses: actions/cache@v4
-        with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-sandbox-${{ hashFiles('sandbox-controller/docker/Dockerfile') }}
-          restore-keys: |
-            ${{ runner.os }}-buildx-sandbox-
-
-      - name: Build sandbox Docker image
+      - name: Build sandbox image
         run: |
-          docker build \
-            --cache-from type=local,src=/tmp/.buildx-cache \
-            --cache-to type=local,dest=/tmp/.buildx-cache-new,mode=max \
-            -t sandbox:latest \
-            -f sandbox-controller/docker/Dockerfile .
-
-      - name: Move cache
-        run: |
-          rm -rf /tmp/.buildx-cache
-          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
-
-      - name: Verify sandbox image
-        run: |
-          docker images sandbox:latest
-
-      - name: Download dependencies
-        working-directory: ./sandbox-controller
-        run: go mod download
+          docker build -t sandbox:latest -f sandbox-controller/docker/Dockerfile .
 
       - name: Run go vet
-        working-directory: ./sandbox-controller
-        run: go vet ./...
+        run: |
+          docker run --rm sandbox:latest sh -c "cd /app && go vet ./..."
 
       - name: Run go fmt check
-        working-directory: ./sandbox-controller
         run: |
-          if [ -n "$(gofmt -l .)" ]; then
-            echo "Go code is not formatted:"
-            gofmt -d .
-            exit 1
-          fi
+          docker run --rm \
+            sandbox:latest \
+            sh -c "cd /app && if [ -n \"\$(gofmt -l .)\" ]; then echo 'Go code is not formatted:'; gofmt -d .; exit 1; fi"
 
       - name: Run unit tests
-        working-directory: ./sandbox-controller
-        run: go test -v -race ./...
+        run: |
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -e DOCKER_HOST=unix:///var/run/docker.sock \
+            -e CGO_ENABLED=1 \
+            sandbox:latest \
+            sh -c "cd /app && go test -v -race ./..."
+
+      - name: Run integration tests
+        run: |
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -e DOCKER_HOST=unix:///var/run/docker.sock \
+            sandbox:latest \
+            sh -c "cd /app && go test -v -run Integration ./..."
+
+      - name: Run E2E tests
+        run: |
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -e DOCKER_HOST=unix:///var/run/docker.sock \
+            sandbox:latest \
+            sh -c "cd /app && go test -v -run E2E ./..."
 
   pre-commit:
     name: Pre-commit Checks
@@ -99,60 +79,6 @@ jobs:
 
       - name: Run pre-commit
         run: pre-commit run --all-files --show-diff-on-failure
-
-  integration-test:
-    name: Integration Tests
-    runs-on: ubuntu-latest
-    needs: [go-test]
-
-    services:
-      docker:
-        image: docker:dind@sha256:6b9cd914eb9c6b342c040a49a27a5eb3804453bae6ecc90f7ff96133595a95e8
-        options: --privileged
-
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-
-      - name: Set up Go
-        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
-        with:
-          go-version: '1.26'
-
-      - name: Set up Docker buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Cache Docker layers
-        uses: actions/cache@v4
-        with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-sandbox-${{ hashFiles('sandbox-controller/docker/Dockerfile') }}
-          restore-keys: |
-            ${{ runner.os }}-buildx-sandbox-
-
-      - name: Build sandbox Docker image
-        run: |
-          docker build \
-            --cache-from type=local,src=/tmp/.buildx-cache \
-            --cache-to type=local,dest=/tmp/.buildx-cache-new,mode=max \
-            -t sandbox:latest \
-            -f sandbox-controller/docker/Dockerfile .
-
-      - name: Move cache
-        run: |
-          rm -rf /tmp/.buildx-cache
-          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
-
-      - name: Verify sandbox image
-        run: |
-          docker images sandbox:latest
-
-      - name: Run Go integration tests
-        working-directory: ./sandbox-controller
-        run: go test -v -run Integration ./...
-
-      - name: Run E2E tests
-        working-directory: ./sandbox-controller
-        run: go test -v -run E2E ./...
 
   security-scan:
     name: Security Scan

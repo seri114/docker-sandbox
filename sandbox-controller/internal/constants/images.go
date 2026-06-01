@@ -2,6 +2,8 @@ package constants
 
 // Docker image constants for consistent usage across the codebase
 const (
-	// DefaultPythonImage is the default Python Docker image for sandbox execution
-	DefaultPythonImage = "python:3.14-alpine"
+	// DefaultSandboxImage is the default sandbox Docker image
+	// Built from sandbox-controller/docker/Dockerfile
+	// Used for both Python code execution and Alpine command testing
+	DefaultSandboxImage = "sandbox:latest"
 )

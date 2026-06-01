@@ -25,6 +25,10 @@ jobs:
         run: |
           docker build --target builder -t sandbox:latest -f sandbox-controller/docker/Dockerfile .
 
+      - name: Build sandbox runtime image
+        run: |
+          docker build --target runtime -t sandbox:runtime -f sandbox-controller/docker/Dockerfile .
+
       - name: Download dependencies
         run: |
           docker run --rm \

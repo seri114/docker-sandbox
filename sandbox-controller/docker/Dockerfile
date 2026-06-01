@@ -65,6 +65,7 @@ RUN apk add --no-cache \
 
 # Go 1.26をダウンロードしてインストール（AlpineリポジトリにGo 1.26がないため）
 ENV GO_VERSION=1.26.0
+ENV PATH=/usr/local/go/bin:${PATH}
 RUN ARCH=$(uname -m) && \
     case ${ARCH} in \
         x86_64) GO_ARCH=amd64 ;; \

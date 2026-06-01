@@ -31,12 +31,33 @@ jobs:
         with:
           go-version: ${{ matrix.go-version }}
 
-      - name: Pull Docker images
+      - name: Set up Docker buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Cache Docker layers
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-sandbox-${{ hashFiles('sandbox-controller/docker/Dockerfile') }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-sandbox-
+
+      - name: Build sandbox Docker image
         run: |
-          docker pull alpine:latest
-          docker pull python:3.14-alpine
-          docker pull alpine:3.20@sha256:d9e853e87e55526f6b2917df91a2115c36dd7c696a35be12163d44e6e2a4b6bc
-          docker pull python:3.14-alpine@sha256:5a824eb82cc75361f98611f3cfc5091ea33f10a6ccea4d4ebdabbc523b9a1614
+          docker build \
+            --cache-from type=local,src=/tmp/.buildx-cache \
+            --cache-to type=local,dest=/tmp/.buildx-cache-new,mode=max \
+            -t sandbox:latest \
+            -f sandbox-controller/docker/Dockerfile .
+
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+
+      - name: Verify sandbox image
+        run: |
+          docker images sandbox:latest
 
       - name: Download dependencies
         working-directory: ./sandbox-controller
@@ -97,12 +118,33 @@ jobs:
         with:
           go-version: '1.26'
 
-      - name: Pull Docker images
+      - name: Set up Docker buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Cache Docker layers
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-sandbox-${{ hashFiles('sandbox-controller/docker/Dockerfile') }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-sandbox-
+
+      - name: Build sandbox Docker image
         run: |
-          docker pull alpine:latest
-          docker pull python:3.14-alpine
-          docker pull alpine:3.20@sha256:d9e853e87e55526f6b2917df91a2115c36dd7c696a35be12163d44e6e2a4b6bc
-          docker pull python:3.14-alpine@sha256:5a824eb82cc75361f98611f3cfc5091ea33f10a6ccea4d4ebdabbc523b9a1614
+          docker build \
+            --cache-from type=local,src=/tmp/.buildx-cache \
+            --cache-to type=local,dest=/tmp/.buildx-cache-new,mode=max \
+            -t sandbox:latest \
+            -f sandbox-controller/docker/Dockerfile .
+
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+
+      - name: Verify sandbox image
+        run: |
+          docker images sandbox:latest
 
       - name: Run Go integration tests
         working-directory: ./sandbox-controller

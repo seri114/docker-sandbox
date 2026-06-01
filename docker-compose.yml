@@ -31,8 +31,6 @@ services:
     networks:
       - sandbox-net
     restart: unless-stopped
-    depends_on:
-      - sandbox-runtime
 
 networks:
   sandbox-net:

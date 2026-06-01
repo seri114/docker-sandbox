@@ -23,7 +23,12 @@ jobs:
 
       - name: Build sandbox builder image
         run: |
-          docker build --target builder -t sandbox:latest -f sandbox-controller/docker/Dockerfile .
+          docker build \
+            --target builder \
+            --build-arg SOURCE_DIR=$(pwd) \
+            -t sandbox:latest \
+            -f sandbox-controller/docker/Dockerfile \
+            .
 
       - name: Build sandbox runtime image
         run: |
@@ -32,28 +37,24 @@ jobs:
       - name: Download dependencies
         run: |
           docker run --rm \
-            -v $(pwd)/sandbox-controller:/app \
             sandbox:latest \
             sh -c "cd /app && go mod download"
 
       - name: Run go vet
         run: |
           docker run --rm \
-            -v $(pwd)/sandbox-controller:/app \
             sandbox:latest \
             sh -c "cd /app && go vet ./..."
 
       - name: Run go fmt check
         run: |
           docker run --rm \
-            -v $(pwd)/sandbox-controller:/app \
             sandbox:latest \
             sh -c "cd /app && if [ -n \"\$(gofmt -l .)\" ]; then echo 'Go code is not formatted:'; gofmt -d .; exit 1; fi"
 
       - name: Run unit tests
         run: |
           docker run --rm \
-            -v $(pwd)/sandbox-controller:/app \
             -v /var/run/docker.sock:/var/run/docker.sock \
             -e DOCKER_HOST=unix:///var/run/docker.sock \
             -e CGO_ENABLED=1 \
@@ -63,7 +64,6 @@ jobs:
       - name: Run integration tests
         run: |
           docker run --rm \
-            -v $(pwd)/sandbox-controller:/app \
             -v /var/run/docker.sock:/var/run/docker.sock \
             -e DOCKER_HOST=unix:///var/run/docker.sock \
             sandbox:latest \
@@ -72,7 +72,6 @@ jobs:
       - name: Run E2E tests
         run: |
           docker run --rm \
-            -v $(pwd)/sandbox-controller:/app \
             -v /var/run/docker.sock:/var/run/docker.sock \
             -e DOCKER_HOST=unix:///var/run/docker.sock \
             sandbox:latest \

@@ -9,6 +9,15 @@ services:
       - sandbox-net
     restart: unless-stopped
 
+  sandbox-runtime:
+    build:
+      context: ./sandbox-controller
+      dockerfile: docker/Dockerfile
+      target: runtime
+    image: sandbox:runtime
+    networks:
+      - sandbox-net
+
   sandbox-controller:
     build:
       context: ./sandbox-controller
@@ -22,6 +31,8 @@ services:
     networks:
       - sandbox-net
     restart: unless-stopped
+    depends_on:
+      - sandbox-runtime
 
 networks:
   sandbox-net:

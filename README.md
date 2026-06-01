@@ -38,10 +38,6 @@ Dockerコンテナ内でPythonコードを安全に実行するPOCシステム
 ## 起動
 
 ```bash
-# sandboxイメージをビルド（初回のみ）
-docker build --target runtime -t sandbox:runtime -f sandbox-controller/docker/Dockerfile .
-
-# サービス起動
 docker compose up --build
 ```
 

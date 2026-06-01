@@ -33,9 +33,12 @@ LABEL version="1.0"
 
 # 必要最小限のAlpineパッケージをインストール
 # ca-certificates: HTTPS通信に必要（セキュリティ上必須）
+# git: go mod downloadに必要
+# go: Goコンパイラとツール（CI/テスト用）
 RUN apk add --no-cache \
     ca-certificates \
     git \
+    go \
     && rm -rf /var/cache/apk/*
 
 # 作業ディレクトリを作成

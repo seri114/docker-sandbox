@@ -35,7 +35,11 @@ LABEL version="1.0"
 # ca-certificates: HTTPS通信に必要（セキュリティ上必須）
 RUN apk add --no-cache \
     ca-certificates \
+    git \
     && rm -rf /var/cache/apk/*
+
+# 作業ディレクトリを作成
+WORKDIR /app
 
 # ヘルスチェック - PythonとAlpineが正常に動作しているか確認
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \

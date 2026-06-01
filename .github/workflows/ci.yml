@@ -25,6 +25,14 @@ jobs:
         run: |
           docker build -t sandbox:latest -f sandbox-controller/docker/Dockerfile .
 
+      - name: Copy source code to container
+        run: |
+          docker run --rm -v $(pwd)/sandbox-controller:/source sandbox:latest sh -c "cp -r /source/* /app/"
+
+      - name: Download dependencies
+        run: |
+          docker run --rm sandbox:latest sh -c "cd /app && go mod download"
+
       - name: Run go vet
         run: |
           docker run --rm sandbox:latest sh -c "cd /app && go vet ./..."

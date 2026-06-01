@@ -21,57 +21,62 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build test image
-        uses: docker/build-push-action@v6
-        with:
-          context: ./sandbox-controller
-          target: builder
-          tags: sandbox-controller:test
-          load: true
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Pull test images
+      - name: Build sandbox builder image
         run: |
-          docker pull alpine:latest
-          docker pull python:3.14-alpine
-          docker pull alpine:3.20@sha256:d9e853e87e55526f6b2917df91a2115c36dd7c696a35be12163d44e6e2a4b6bc
-          docker pull python:3.14-alpine@sha256:5a824eb82cc75361f98611f3cfc5091ea33f10a6ccea4d4ebdabbc523b9a1614
+          docker build --target builder -t sandbox:latest -f sandbox-controller/docker/Dockerfile .
+
+      - name: Build sandbox runtime image
+        run: |
+          docker build --target runtime -t sandbox:runtime -f sandbox-controller/docker/Dockerfile .
+
+      - name: Download dependencies
+        run: |
+          docker run --rm \
+            -v $(pwd)/sandbox-controller:/app \
+            sandbox:latest \
+            sh -c "cd /app && go mod download"
 
       - name: Run go vet
         run: |
-          docker run --rm sandbox-controller:test go vet ./...
+          docker run --rm \
+            -v $(pwd)/sandbox-controller:/app \
+            sandbox:latest \
+            sh -c "cd /app && go vet ./..."
 
       - name: Run go fmt check
         run: |
           docker run --rm \
-            sandbox-controller:test \
-            sh -c "if [ -n \"\$(gofmt -l .)\" ]; then echo 'Go code is not formatted:'; gofmt -d .; exit 1; fi"
+            -v $(pwd)/sandbox-controller:/app \
+            sandbox:latest \
+            sh -c "cd /app && if [ -n \"\$(gofmt -l .)\" ]; then echo 'Go code is not formatted:'; gofmt -d .; exit 1; fi"
 
       - name: Run unit tests
         run: |
           docker run --rm \
+            -v $(pwd)/sandbox-controller:/app \
             -v /var/run/docker.sock:/var/run/docker.sock \
             -e DOCKER_HOST=unix:///var/run/docker.sock \
             -e CGO_ENABLED=1 \
-            sandbox-controller:test \
-            go test -v -race ./...
+            sandbox:latest \
+            sh -c "cd /app && go test -v -race ./..."
 
       - name: Run integration tests
         run: |
           docker run --rm \
+            -v $(pwd)/sandbox-controller:/app \
             -v /var/run/docker.sock:/var/run/docker.sock \
             -e DOCKER_HOST=unix:///var/run/docker.sock \
-            sandbox-controller:test \
-            go test -v -run Integration ./...
+            sandbox:latest \
+            sh -c "cd /app && go test -v -run Integration ./..."
 
       - name: Run E2E tests
         run: |
           docker run --rm \
+            -v $(pwd)/sandbox-controller:/app \
             -v /var/run/docker.sock:/var/run/docker.sock \
             -e DOCKER_HOST=unix:///var/run/docker.sock \
-            sandbox-controller:test \
-            go test -v -run E2E ./...
+            sandbox:latest \
+            sh -c "cd /app && go test -v -run E2E ./..."
 
   pre-commit:
     name: Pre-commit Checks

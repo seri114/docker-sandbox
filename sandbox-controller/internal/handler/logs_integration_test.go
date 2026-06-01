@@ -35,7 +35,7 @@ func TestLogsStreamerIntegration(t *testing.T) {
 
 	// Create a test container that outputs both stdout and stderr
 	containerConfig := &container.Config{
-		Image:        "alpine:latest",
+		Image:        constants.DefaultSandboxImage,
 		Cmd:          []string{"sh", "-c", "echo stdout1 && echo stderr >&2 && echo stdout2"},
 		AttachStdout: true,
 		AttachStderr: true,
@@ -164,7 +164,7 @@ func TestLogsStreamerLargeOutput(t *testing.T) {
 	}
 
 	containerConfig := &container.Config{
-		Image:        constants.DefaultPythonImage,
+		Image:        constants.DefaultSandboxImage,
 		Cmd:          []string{"python", "-c", "print('A' * 5000)"},
 		AttachStdout: true,
 		AttachStderr: true,

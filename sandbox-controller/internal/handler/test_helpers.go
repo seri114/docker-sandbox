@@ -8,7 +8,7 @@ import (
 // This centralizes test configuration and ensures consistency across tests.
 func GetDefaultTestConfig() CreateContainerRequest {
 	return CreateContainerRequest{
-		Image:  constants.DefaultPythonImage,
+		Image:  constants.DefaultSandboxImage,
 		Code:   "print('hello')",  // Default test code
 		Memory: 128 * 1024 * 1024, // 128MB
 		CPU:    0.5,               // 50% of a CPU

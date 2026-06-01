@@ -15,8 +15,8 @@ func TestCreateContainerRequest(t *testing.T) {
 		t.Fatal("expected non-nil config")
 	}
 
-	if config.Image != constants.DefaultPythonImage {
-		t.Errorf("expected image '%s', got '%s'", constants.DefaultPythonImage, config.Image)
+	if config.Image != constants.DefaultSandboxImage {
+		t.Errorf("expected image '%s', got '%s'", constants.DefaultSandboxImage, config.Image)
 	}
 
 	expectedCmd := []string{"python", "-u", "-c", "print('hello')"}
@@ -109,7 +109,7 @@ func TestCreateContainerRequestValidate(t *testing.T) {
 	}
 
 	invalidMemory := &CreateContainerRequest{
-		Image:  "python:3.14-alpine",
+		Image:  constants.DefaultSandboxImage,
 		Code:   "print('hello')",
 		Memory: 0,
 		CPU:    0.5,

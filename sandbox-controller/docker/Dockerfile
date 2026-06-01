@@ -55,12 +55,26 @@ FROM base AS builder
 
 LABEL description="Sandbox builder image with Python, Go 1.26+, and testing tools"
 
-# Go 1.26と開発ツールをインストール
+# 開発ツールをインストール
+# git: go mod downloadに必要
 # golangci-lint: Goのリンター/フォーマッター
 RUN apk add --no-cache \
     git \
-    go~=1.26 \
+    golangci-lint \
     && rm -rf /var/cache/apk/*
+
+# Go 1.26をダウンロードしてインストール（AlpineリポジトリにGo 1.26がないため）
+ENV GO_VERSION=1.26.0
+RUN ARCH=$(uname -m) && \
+    case ${ARCH} in \
+        x86_64) GO_ARCH=amd64 ;; \
+        aarch64) GO_ARCH=arm64 ;; \
+        *) echo "Unsupported architecture: ${ARCH}" && exit 1 ;; \
+    esac && \
+    wget -q https://go.dev/dl/go${GO_VERSION}.linux-${GO_ARCH}.tar.gz && \
+    tar -C /usr/local -xzf go${GO_VERSION}.linux-${GO_ARCH}.tar.gz && \
+    rm go${GO_VERSION}.linux-${GO_ARCH}.tar.gz && \
+    go version
 
 # 作業ディレクトリを作成
 WORKDIR /app

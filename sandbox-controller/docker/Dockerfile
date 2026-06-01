@@ -1,49 +1,70 @@
 # =============================================================================
-# Sandbox Controller Custom Docker Image
+# Sandbox Controller Docker Images
 # =============================================================================
-# This Dockerfile defines a custom image for sandbox execution.
+# This Dockerfile defines multiple images for different purposes:
+# - Runtime image: Lightweight for production Python execution
+# - Builder image: Full-featured for CI/CD with Go and testing tools
 #
-# Purpose:
-#   - Production: Execute Python code in isolated containers
-#   - Testing: Run integration and E2E tests with Alpine commands
-#
-# Base: Python 3.14 on Alpine Linux (includes Python + Alpine tools)
-#
-# Renovate: This format is automatically updated by Renovate bot
+# Build targets:
+#   - runtime: Production image with Python only (lightweight)
+#   - builder: CI/CD image with Python + Go + testing tools (full-featured)
 #
 # Usage:
-#   docker build -t sandbox:latest -f sandbox-controller/docker/Dockerfile .
+#   docker build --target runtime -t sandbox:runtime -f sandbox-controller/docker/Dockerfile .
+#   docker build --target builder -t sandbox:latest -f sandbox-controller/docker/Dockerfile .
 # =============================================================================
 
 # =============================================================================
-# サンドボックスイメージ
+# 共通ベース - Python 3.14 Alpine
 # =============================================================================
-# Used for both Python code execution and Alpine command testing.
-# Base image (python:3.14-alpine) already includes both Python and Alpine tools.
-#
-# Note: Renovate automatically updates the tag and digest
-# =============================================================================
-
-FROM python:3.14-alpine@sha256:5a824eb82cc75361f98611f3cfc5091ea33f10a6ccea4d4ebdabbc523b9a1614
+FROM python:3.14-alpine@sha256:5a824eb82cc75361f98611f3cfc5091ea33f10a6ccea4d4ebdabbc523b9a1614 AS base
 
 # ラベルを追加
 LABEL maintainer="docker-sandbox"
-LABEL description="Sandbox execution environment with Python 3.14 on Alpine"
 LABEL version="1.0"
 
 # 必要最小限のAlpineパッケージをインストール
 # ca-certificates: HTTPS通信に必要（セキュリティ上必須）
-# git: go mod downloadに必要
-# go: Goコンパイラとツール（CI/テスト用）
 RUN apk add --no-cache \
     ca-certificates \
+    && rm -rf /var/cache/apk/*
+
+# =============================================================================
+# 本番用イメージ（軽量）
+# =============================================================================
+# Used for production Python code execution in sandboxed containers.
+# Contains only Python and minimal dependencies.
+# Size: ~50MB
+# =============================================================================
+FROM base AS runtime
+
+LABEL description="Sandbox runtime image with Python 3.14 on Alpine (minimal)"
+
+# ヘルスチェック - Pythonが正常に動作しているか確認
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD python -c "import sys; sys.exit(0)"
+
+# =============================================================================
+# CI/CD用イメージ（フル機能）
+# =============================================================================
+# Used for CI/CD pipelines and local development.
+# Contains Python, Go (1.26+), and testing tools.
+# Size: ~300MB
+# =============================================================================
+FROM base AS builder
+
+LABEL description="Sandbox builder image with Python, Go 1.26+, and testing tools"
+
+# Go 1.26と開発ツールをインストール
+# golangci-lint: Goのリンター/フォーマッター
+RUN apk add --no-cache \
     git \
-    go \
+    go~=1.26 \
     && rm -rf /var/cache/apk/*
 
 # 作業ディレクトリを作成
 WORKDIR /app
 
-# ヘルスチェック - PythonとAlpineが正常に動作しているか確認
+# ヘルスチェック - PythonとGoが正常に動作しているか確認
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD python -c "import sys; sys.exit(0)" && sh -c "exit 0"
+    CMD python -c "import sys; sys.exit(0)" && sh -c "go version"

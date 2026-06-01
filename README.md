@@ -38,6 +38,10 @@ Dockerコンテナ内でPythonコードを安全に実行するPOCシステム
 ## 起動
 
 ```bash
+# sandboxイメージをビルド（初回のみ）
+docker build --target runtime -t sandbox:runtime -f sandbox-controller/docker/Dockerfile .
+
+# サービス起動
 docker compose up --build
 ```
 
@@ -95,7 +99,7 @@ CORS_ORIGINS=https://example.com,https://www.example.com
 curl -X POST http://localhost:18080/containers/create \
   -H "Content-Type: application/json" \
   -d '{
-    "image": "sandbox:latest",
+    "image": "sandbox:runtime",
     "code": "print(\"Hello\")",
     "memory": 134217768,
     "cpu": 0.5

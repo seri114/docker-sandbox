@@ -57,9 +57,13 @@ LABEL description="Sandbox builder image with Python, Go 1.26+, and testing tool
 
 # 開発ツールをインストール
 # git: go mod downloadに必要
+# gcc: CGO_ENABLED=1での-raceテストに必要
+# musl-dev: CGOに必要
 # golangci-lint: Goのリンター/フォーマッター
 RUN apk add --no-cache \
     git \
+    gcc \
+    musl-dev \
     golangci-lint \
     && rm -rf /var/cache/apk/*
 

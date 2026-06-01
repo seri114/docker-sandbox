@@ -25,27 +25,31 @@ jobs:
         run: |
           docker build -t sandbox:latest -f sandbox-controller/docker/Dockerfile .
 
-      - name: Copy source code to container
-        run: |
-          docker run --rm -v $(pwd)/sandbox-controller:/source sandbox:latest sh -c "cp -r /source/* /app/"
-
       - name: Download dependencies
         run: |
-          docker run --rm sandbox:latest sh -c "cd /app && go mod download"
+          docker run --rm \
+            -v $(pwd)/sandbox-controller:/app \
+            sandbox:latest \
+            sh -c "cd /app && go mod download"
 
       - name: Run go vet
         run: |
-          docker run --rm sandbox:latest sh -c "cd /app && go vet ./..."
+          docker run --rm \
+            -v $(pwd)/sandbox-controller:/app \
+            sandbox:latest \
+            sh -c "cd /app && go vet ./..."
 
       - name: Run go fmt check
         run: |
           docker run --rm \
+            -v $(pwd)/sandbox-controller:/app \
             sandbox:latest \
             sh -c "cd /app && if [ -n \"\$(gofmt -l .)\" ]; then echo 'Go code is not formatted:'; gofmt -d .; exit 1; fi"
 
       - name: Run unit tests
         run: |
           docker run --rm \
+            -v $(pwd)/sandbox-controller:/app \
             -v /var/run/docker.sock:/var/run/docker.sock \
             -e DOCKER_HOST=unix:///var/run/docker.sock \
             -e CGO_ENABLED=1 \
@@ -55,6 +59,7 @@ jobs:
       - name: Run integration tests
         run: |
           docker run --rm \
+            -v $(pwd)/sandbox-controller:/app \
             -v /var/run/docker.sock:/var/run/docker.sock \
             -e DOCKER_HOST=unix:///var/run/docker.sock \
             sandbox:latest \
@@ -63,6 +68,7 @@ jobs:
       - name: Run E2E tests
         run: |
           docker run --rm \
+            -v $(pwd)/sandbox-controller:/app \
             -v /var/run/docker.sock:/var/run/docker.sock \
             -e DOCKER_HOST=unix:///var/run/docker.sock \
             sandbox:latest \

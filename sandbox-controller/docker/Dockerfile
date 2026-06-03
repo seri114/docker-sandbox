@@ -47,7 +47,7 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
 # Base: golang:1.26-alpine official image includes Go 1.26 on Alpine Linux
 # Python is installed from Alpine repository to match runtime image version
 # =============================================================================
-FROM golang:1.26-alpine@sha256:91eda9776261207ea25fd06b5b7fed8d397dd2c0a283e77f2ab6e91bfa71079d AS builder
+FROM golang:1.26-alpine@sha256:f23e8b227fb4493eabe03bede4d5a32d04092da71962f1fb79b5f7d1e6c2a17f AS builder
 
 LABEL maintainer="docker-sandbox"
 LABEL description="Sandbox builder image with Python 3.14, Go 1.26, and testing tools"

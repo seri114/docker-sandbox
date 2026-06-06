@@ -16,10 +16,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@v6.0.2@de0fac2e4500dabe0009e67214ff5f5447ce83dd
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
+        uses: docker/setup-buildx-action@v4.1.0@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5
 
       - name: Build sandbox builder image
         run: |
@@ -82,10 +82,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@v6.0.2@de0fac2e4500dabe0009e67214ff5f5447ce83dd
 
       - name: Set up Python
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        uses: actions/setup-python@v6.2.0@a309ff8b426b58ec0e2a45f0f869d46889d02405
         with:
           python-version: '3.14'
 
@@ -102,10 +102,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@v6.0.2@de0fac2e4500dabe0009e67214ff5f5447ce83dd
 
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@314ff8b43182423b84c50b1670b0e10f858f2d98 # v0.36.0
+        uses: aquasecurity/trivy-action@0.36.0@314ff8b43182423b84c50b1670b0e10f858f2d98
         with:
           scan-type: 'fs'
           scan-ref: '.'
@@ -113,7 +113,7 @@ jobs:
           output: 'trivy-results.sarif'
 
       - name: Upload Trivy results to GitHub Security
-        uses: github/codeql-action/upload-sarif@7211b7c8077ea37d8641b6271f6a365a22a5fbfa # v4.36.0
+        uses: github/codeql-action/upload-sarif@v4.36.0@7211b7c8077ea37d8641b6271f6a365a22a5fbfa
         if: always()
         with:
           sarif_file: 'trivy-results.sarif'

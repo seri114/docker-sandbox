@@ -79,6 +79,7 @@
   "prHourlyLimit": 2,
   "prCreation": "immediate",
   "minimumReleaseAge": "7 days",
+  "internalChecksFilter": "strict",
   "rebaseWhen": "conflicted",
   "updateNotScheduled": false,
   "separateMajorMinor": true,

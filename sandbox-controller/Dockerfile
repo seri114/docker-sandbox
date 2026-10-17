@@ -1,5 +1,5 @@
 # Build stage
-FROM golang:1.26-alpine@sha256:f23e8b227fb4493eabe03bede4d5a32d04092da71962f1fb79b5f7d1e6c2a17f AS builder
+FROM golang:1.27-alpine@sha256:f92b6ef800e499660581efdabdf25d9d817a9d124eaf900924f0504e7e27e12d AS builder
 
 WORKDIR /build
 
@@ -23,7 +23,7 @@ RUN go mod tidy && \
     -o /build/controller .
 
 # Final stage - TEMPORARY alpine for testing
-FROM alpine:3.24@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b
+FROM alpine:3.24@sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6
 
 # Copy the binary from builder
 COPY --from=builder /build/controller /controller

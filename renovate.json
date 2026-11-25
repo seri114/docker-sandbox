@@ -37,7 +37,7 @@
     },
     {
       "description": "Python dependencies via uv/pep621",
-      "matchManagers": ["pep621", "uv"],
+      "matchManagers": ["pep621"],
       "automerge": true,
       "automergeType": "pr",
       "platformAutomerge": false,

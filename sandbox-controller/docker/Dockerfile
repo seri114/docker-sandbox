@@ -21,7 +21,7 @@
 # Contains only Python and minimal dependencies.
 # Size: ~50MB
 # =============================================================================
-FROM python:3.14-alpine@sha256:5a824eb82cc75361f98611f3cfc5091ea33f10a6ccea4d4ebdabbc523b9a1614 AS runtime
+FROM python:3.15-alpine@sha256:0f9552bb28711333da16915ec146f5e6bb44a7fdac9ced15dc17c2e0206346dd AS runtime
 
 LABEL maintainer="docker-sandbox"
 LABEL description="Sandbox runtime image with Python 3.14 on Alpine (minimal)"
@@ -47,7 +47,7 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
 # Base: golang:1.26-alpine official image includes Go 1.26 on Alpine Linux
 # Python is installed from Alpine repository to match runtime image version
 # =============================================================================
-FROM golang:1.26-alpine@sha256:f23e8b227fb4493eabe03bede4d5a32d04092da71962f1fb79b5f7d1e6c2a17f AS builder
+FROM golang:1.27-alpine@sha256:70bd7ddea8b6cbe5d6943cde279d6b67feb10cc924fb9100d1d8757c1575b280 AS builder
 
 LABEL maintainer="docker-sandbox"
 LABEL description="Sandbox builder image with Python 3.14, Go 1.26, and testing tools"

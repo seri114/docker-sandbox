@@ -1,8 +1,5 @@
 # Docker Python Sandbox
 
-[![CI](https://github.com/seri114/docker-sandbox/actions/workflows/ci.yml/badge.svg)](https://github.com/seri114/docker-sandbox/actions/workflows/ci.yml)
-定期実行: [![CI（定期実行）](https://github.com/seri114/docker-sandbox/actions/workflows/ci.yml/badge.svg?event=schedule)](https://github.com/seri114/docker-sandbox/actions/workflows/ci.yml?query=event%3Aschedule)
-
 Dockerコンテナ内でPythonコードを安全に実行するPOCシステム
 
 ## セキュリティ

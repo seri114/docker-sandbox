@@ -1,5 +1,7 @@
 # Docker Python Sandbox
 
+[![CI](https://github.com/seri114/docker-sandbox/actions/workflows/ci.yml/badge.svg)](https://github.com/seri114/docker-sandbox/actions/workflows/ci.yml)
+
 Dockerコンテナ内でPythonコードを安全に実行するPOCシステム
 
 ## セキュリティ
